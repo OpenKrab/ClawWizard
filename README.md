@@ -172,7 +172,25 @@ You need the "engine" to run this app. You have two choices:
 
    *This command runs both the Vite frontend and the Node.js bridge server concurrently.*
 
+### 🐳 Docker Deployment (Optional)
+
+If you prefer to run ClawWizard in a container:
+
+1. **Build and Start**:
+   ```bash
+   docker-compose up -d
+   ```
+
+2. **Access the App**:
+   Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+> [!NOTE]
+> The Docker setup automatically mounts `~/.openclaw` to persist your configurations.
+
+---
+
 4. Open [http://localhost:5173](http://localhost:5173) in your browser.
+
 
 ---
 

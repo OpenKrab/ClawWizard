@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  clawwizard:
+    build: .
+    container_name: clawwizard
+    ports:
+      - "5173:5173"
+      - "18790:18790"
+    volumes:
+      # Map the local openclaw directory to keep configs persistent
+      # Change this path if you are on Windows to your user profile directory
+      # e.g., - C:\Users\Admin\.openclaw:/root/.openclaw
+      - ~/.openclaw:/root/.openclaw
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
