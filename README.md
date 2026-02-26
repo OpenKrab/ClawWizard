@@ -2,7 +2,7 @@
 
 **ClawWizard** is a premium, interactive setup wizard for [OpenClaw](https://github.com/openclaw/openclaw), your personal AI assistant. It provides a full-featured GUI for configuring every aspect of the OpenClaw Gateway, from model providers to messaging channels and agent skills.
 
-![ClawWizard Banner](https://raw.githubusercontent.com/openclaw/openclaw/main/assets/banner.png) *(Note: Placeholder image)*
+![ClawWizard Banner](/public/banner.png)
 
 ## Features
 
