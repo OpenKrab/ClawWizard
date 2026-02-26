@@ -5,6 +5,8 @@
 
 /* --- CSS Custom Properties --- */
 :root {
+  color-scheme: dark;
+
   /* Background layers */
   --bg-primary: #06080f;
   --bg-secondary: #0c1020;
@@ -79,6 +81,56 @@
   --sidebar-width: 280px;
 }
 
+/* Light Theme */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Background layers */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-surface: rgba(15, 20, 40, 0.05);
+
+  /* Glass */
+  --glass-bg: rgba(15, 20, 40, 0.04);
+  --glass-bg-hover: rgba(15, 20, 40, 0.07);
+  --glass-bg-active: rgba(15, 20, 40, 0.1);
+  --glass-border: rgba(15, 20, 40, 0.08);
+  --glass-border-hover: rgba(15, 20, 40, 0.15);
+  --glass-blur: 20px;
+
+  /* Accent gradient */
+  --accent-start: #ff6b35;
+  --accent-end: #ff2d78;
+  --accent-gradient: linear-gradient(
+    135deg,
+    var(--accent-start),
+    var(--accent-end)
+  );
+  --accent-glow: rgba(255, 107, 53, 0.3);
+
+  /* Secondary accent */
+  --accent2-start: #6366f1;
+  --accent2-end: #8b5cf6;
+  --accent2-gradient: linear-gradient(
+    135deg,
+    var(--accent2-start),
+    var(--accent2-end)
+  );
+
+  /* Text */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --text-accent: #ff6b35;
+
+  /* Status */
+  --status-success: #22c55e;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+  --status-info: #3b82f6;
+}
+
 /* --- Reset --- */
 *,
 *::before,
@@ -101,6 +153,9 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1.6;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* Background gradient mesh */
@@ -1081,4 +1136,95 @@ a:hover {
   --terminal-green: #4ade80;
   --terminal-blue: #60a5fa;
   --terminal-red: #f87171;
+}
+
+/* --- Theme Switcher --- */
+.theme-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-size: 14px;
+  font-weight: 600;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theme-switcher:hover {
+  border-color: var(--glass-border-hover);
+  background: var(--glass-bg-hover);
+  color: var(--text-primary);
+}
+
+.theme-switcher:active {
+  transform: scale(0.98);
+}
+
+.theme-switcher:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.switch-track {
+  width: 44px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--glass-border);
+  position: relative;
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.switch-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: all var(--transition-base);
+}
+
+[data-theme="light"] .switch-track {
+  background: var(--bg-tertiary);
+  border-color: var(--glass-border);
+}
+
+[data-theme="light"] .switch-thumb {
+  background: var(--text-tertiary);
+  transform: translateX(20px);
+}
+
+.switch-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  transition: all var(--transition-base);
+}
+
+[data-theme="light"] .switch-label {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+}
+
+/* Smooth transitions for theme switcher */
+.theme-switcher,
+.switch-track,
+.switch-thumb,
+.switch-label {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

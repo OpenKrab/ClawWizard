@@ -8,6 +8,7 @@ import ChannelsPage from './pages/ChannelsPage'
 import ToolsSkillsPage from './pages/ToolsSkillsPage'
 import PreviewDeployPage from './pages/PreviewDeployPage'
 import DiagnosticsPage from './pages/DiagnosticsPage'
+import ThemeSwitcher from './components/ThemeSwitcher'
 import { useEffect } from 'react'
 
 const STEP_ROUTES = ['/', '/model', '/workspace', '/gateway', '/channels', '/tools', '/deploy']
@@ -28,6 +29,7 @@ export default function App() {
           <span className="logo-icon">🦞</span>
           <span className="logo-text">ClawWizard</span>
           <span className="logo-version">v1.0</span>
+          <ThemeSwitcher />
         </div>
 
         <ul className="step-list">

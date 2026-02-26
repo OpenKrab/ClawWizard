@@ -100,6 +100,7 @@ const initialState = {
   provider: 'anthropic',
   apiKey: '',
   skippedFields: [],
+  theme: 'dark', // Add theme state
 }
 
 function loadState() {
@@ -111,6 +112,21 @@ function loadState() {
     }
   } catch (e) { /* ignore */ }
   return initialState
+}
+
+function deepMerge(target, source) {
+  const result = { ...target }
+  for (const key of Object.keys(source)) {
+    if (
+      source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) &&
+      target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])
+    ) {
+      result[key] = deepMerge(target[key], source[key])
+    } else {
+      result[key] = source[key]
+    }
+  }
+  return result
 }
 
 function wizardReducer(state, action) {
@@ -187,6 +203,8 @@ function wizardReducer(state, action) {
         selectedTemplate: action.payload.id,
         soulMd: action.payload.soulMd || state.soulMd,
       }
+    case 'SET_THEME':
+      return { ...state, theme: action.payload }
     case 'RESET':
       return { ...initialState }
     default:
@@ -194,20 +212,7 @@ function wizardReducer(state, action) {
   }
 }
 
-function deepMerge(target, source) {
-  const result = { ...target }
-  for (const key of Object.keys(source)) {
-    if (
-      source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) &&
-      target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])
-    ) {
-      result[key] = deepMerge(target[key], source[key])
-    } else {
-      result[key] = source[key]
-    }
-  }
-  return result
-}
+
 
 const WizardContext = createContext(null)
 
