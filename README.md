@@ -2,7 +2,9 @@
 
 **ClawWizard** is a premium, interactive setup wizard for [OpenClaw](https://github.com/openclaw/openclaw), your personal AI assistant. It provides a full-featured GUI for configuring every aspect of the OpenClaw Gateway, from model providers to messaging channels and agent skills.
 
-<img src="/public/banner.png" alt="ClawWizard Banner" width="700">
+<p align="center">
+  <img src="/public/banner.png" alt="ClawWizard Banner" width="700">
+</p>
 
 ## Features
 
@@ -13,6 +15,46 @@
 - **🚀 Live Deployment**: Write configuration files directly to `~/.openclaw/` and manage the OpenClaw daemon from the browser.
 - **🛰️ Log Streaming**: Watch your AI assistant come to life with real-time log streaming in a web-based terminal.
 - **💎 Premium Design**: Dark-mode glassmorphism interface with fluid animations and micro-interactions.
+
+## 💡 Manual for Complete Beginners (No Tech Skills Required!)
+
+If you've never used a coding program or don't know what a "Terminal" is, don't worry! Follow these simple steps and you'll have ClawWizard running in no time.
+
+### 1. Get the Engine Ready (Easy Mode 🚀)
+
+You need the "engine" to run this app. You have two choices:
+
+- **Option 1 (Automatic)**: Find the file named `install_nodejs.ps1` in this folder, **right-click it**, and select **"Run with PowerShell"**. The system will download and install Node.js for you automatically!
+- **Option 2 (Manual)**: Go to [nodejs.org](https://nodejs.org/) and click the button that says **"LTS"** to download and install it manually.
+
+### 2. How to Open the App (The easy way)
+
+**For Windows:**
+
+1. Go to the `ClawWizard` folder you downloaded.
+2. Click on the **address bar** at the top of the folder window (where it says `D:\Projects\...`).
+3. Type the word `cmd` and press **Enter**.
+   - *A black window will pop up. That is the Terminal (or Command Prompt).*
+4. Type this command into the black window and press Enter:
+
+   ```bash
+   npm install
+   ```
+
+   *(Wait for it to finish. Do not close this window!)*
+5. Once it's done, type the final command to start the app:
+
+   ```bash
+   npm run dev
+   ```
+
+### 3. Start Using It
+
+- After typing the last command, your browser should open to a beautiful interface. (If it doesn't, copy and paste `http://localhost:5173` into Chrome).
+- **Follow the on-screen instructions**: The wizard will ask you questions one by one. Just fill in the info as requested.
+- **Top Tip**: When you reach the last step, if you have OpenClaw installed on your machine, just click the purple **"Deploy Now"** button. The app will handle the rest for you—no more coding required!
+
+---
 
 ## Getting Started
 
