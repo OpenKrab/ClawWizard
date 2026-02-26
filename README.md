@@ -21,6 +21,83 @@
 
 ---
 
+## 🗺️ Wizard Flow
+
+```mermaid
+flowchart TD
+    A([🦞 Start ClawWizard]) --> B
+
+    subgraph STEP1["Step 1 · Welcome"]
+        B[Choose Use Case\nPersonal / Coding / Research\nAutomation / Trading / Custom]
+        B --> B2[Pick a pre-built Template\nor start blank]
+    end
+
+    B2 --> C
+
+    subgraph STEP2["Step 2 · Model & Auth"]
+        C[Select LLM Provider\n20+ providers available]
+        C --> C2{Uses API Key?}
+        C2 -- Yes --> C3[Enter API Key\nor skip]
+        C2 -- No --> C4[OAuth / Local\ne.g. Ollama, Qwen]
+    end
+
+    C3 & C4 --> D
+
+    subgraph STEP3["Step 3 · Workspace & Persona"]
+        D[Edit OpenClaw system files]
+        D --> D1[SOUL.md · Personality]
+        D --> D2[AGENTS.md · Behavior rules]
+        D --> D3[IDENTITY · Name & emoji]
+        D --> D4[BOOT / HEARTBEAT / TOOLS / USER]
+        D1 & D2 & D3 & D4 --> D5[🎭 Mix & match Templates\nAppend or replace per file]
+    end
+
+    D5 --> E
+
+    subgraph STEP4["Step 4 · Gateway"]
+        E[Configure Gateway\nPort / Bind / Tailscale / Auth mode]
+    end
+
+    E --> F
+
+    subgraph STEP5["Step 5 · Channels"]
+        F[Enable Messaging Channels\nWhatsApp · Telegram · Discord · Slack\nSignal · Matrix · LINE · Zalo · ...]
+        F --> F2{Group Chat?}
+        F2 -- Yes --> F3[Set groupPolicy\nallowlist / requireMention\nResolve Group ID via CLI]
+        F2 -- No --> F4[Set dmPolicy\npairing / public]
+    end
+
+    F3 & F4 --> G
+
+    subgraph STEP6["Step 6 · Tools & Skills"]
+        G[Select Tool Groups\nFilesystem · Browser · Terminal\nCode Exec · Memory · Cron]
+    end
+
+    G --> H
+
+    subgraph STEP7["Step 7 · Preview & Deploy"]
+        H[Review openclaw.json config]
+        H --> I{Deploy mode?}
+        I -- Live Deploy --> J[🚀 Write config to ~/.openclaw/\nStart Gateway\nHealth check]
+        I -- Manual --> K[📋 Copy CLI commands\nor download openclaw.json]
+    end
+
+    J --> L[✅ Gateway Online!\nOpens Dashboard 🌐\nOpens TUI 💻]
+    K --> M[⚙️ Run: openclaw onboard\nThen: openclaw pairing approve]
+
+    style A fill:#ff6b35,color:#fff,stroke:none
+    style L fill:#22c55e,color:#fff,stroke:none
+    style STEP1 fill:#1a1a2e,stroke:#ff6b35,color:#fff
+    style STEP2 fill:#1a1a2e,stroke:#ff6b35,color:#fff
+    style STEP3 fill:#1a1a2e,stroke:#ff6b35,color:#fff
+    style STEP4 fill:#1a1a2e,stroke:#ff6b35,color:#fff
+    style STEP5 fill:#1a1a2e,stroke:#ff6b35,color:#fff
+    style STEP6 fill:#1a1a2e,stroke:#ff6b35,color:#fff
+    style STEP7 fill:#1a1a2e,stroke:#ff6b35,color:#fff
+```
+
+---
+
 ## 💡 Manual for Complete Beginners (No Tech Skills Required!)
 
 If you've never used a coding program or don't know what a "Terminal" is, don't worry! Follow these simple steps and you'll have ClawWizard running in no time.
