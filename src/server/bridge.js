@@ -40,9 +40,31 @@ const server = http.createServer(async (req, res) => {
 
         // 2. Write .env
         let envContent = "";
-        for (const [key, val] of Object.entries(env || {})) {
-          envContent += `${key}=${val}\n`;
+
+        // Extract API Key if present in the nested structure
+        const primaryModel = config.agents?.defaults?.model?.primary;
+        const [provider] = (primaryModel || "").split("/");
+
+        // Map common provider env names
+        const envMaps = {
+          openai: "OPENAI_API_KEY",
+          anthropic: "ANTHROPIC_API_KEY",
+          google: "GOOGLE_API_KEY",
+          kilocode: "KILO_API_KEY",
+        };
+
+        const envKey = envMaps[provider];
+        if (envKey && env && env[envKey]) {
+          envContent += `${envKey}=${env[envKey]}\n`;
         }
+
+        // Add other env vars
+        for (const [key, val] of Object.entries(env || {})) {
+          if (key !== envKey) {
+            envContent += `${key}=${val}\n`;
+          }
+        }
+
         if (envContent) fs.writeFileSync(ENV_PATH, envContent);
 
         // 3. Write SOUL.md if provided
