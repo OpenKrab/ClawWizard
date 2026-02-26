@@ -194,6 +194,19 @@ If you prefer to run ClawWizard in a container:
 
 ---
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="assets/step1_welcome.png" width="400" alt="Step 1: Welcome">
+  <img src="assets/step2_model.png" width="400" alt="Step 2: Model Auth">
+  <img src="assets/step3_workspace.png" width="400" alt="Step 3: Workspace">
+  <img src="assets/step4_gateway.png" width="400" alt="Step 4: Gateway">
+  <img src="assets/step5_channels.png" width="400" alt="Step 5: Channels">
+  <img src="assets/step6_tools.png" width="400" alt="Step 6: Tools">
+</p>
+
+---
+
 ## 🎭 Workspace Templates
 
 ClawWizard includes a rich library of pre-built templates for every OpenClaw system file. Mix and match to build the perfect AI personality.

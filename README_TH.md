@@ -193,4 +193,17 @@ flowchart TD
 
 ---
 
+## 📸 ภาพหน้าจอการใช้งาน (Screenshots)
+
+<p align="center">
+  <img src="assets/step1_welcome.png" width="400" alt="Step 1: Welcome">
+  <img src="assets/step2_model.png" width="400" alt="Step 2: Model Auth">
+  <img src="assets/step3_workspace.png" width="400" alt="Step 3: Workspace">
+  <img src="assets/step4_gateway.png" width="400" alt="Step 4: Gateway">
+  <img src="assets/step5_channels.png" width="400" alt="Step 5: Channels">
+  <img src="assets/step6_tools.png" width="400" alt="Step 6: Tools">
+</p>
+
+---
+
 *ขับเคลื่อนโดยวิถีกุ้งมังกร (The Lobster Way) 🦞*
