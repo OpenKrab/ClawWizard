@@ -4,7 +4,7 @@
 
 ![ClawWizard Banner](https://raw.githubusercontent.com/openclaw/openclaw/main/assets/banner.png) *(Note: Placeholder image)*
 
-## ✨ Features
+## Features
 
 - **🎯 Interactive Onboarding**: Step-by-step guidance for beginners and power users alike.
 - **🤖 Provider & Model Picker**: Support for 19+ LLM providers including Anthropic, OpenAI, Kilocode, Ollama, and more.
@@ -14,7 +14,7 @@
 - **🛰️ Log Streaming**: Watch your AI assistant come to life with real-time log streaming in a web-based terminal.
 - **💎 Premium Design**: Dark-mode glassmorphism interface with fluid animations and micro-interactions.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -50,14 +50,14 @@
 
 4. Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-## 📂 Project Structure
+## Project Structure
 
 - `src/context/`: State management and configuration generation logic.
 - `src/pages/`: Modular wizard steps.
 - `src/server/`: Bridge server to interact with the local filesystem and OpenClaw CLI.
 - `src/data/`: Metadata for templates, models, and providers.
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
