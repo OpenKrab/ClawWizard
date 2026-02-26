@@ -36,10 +36,12 @@ export default function GatewayPage() {
             value={gw.bind}
             onChange={(e) => update({ bind: e.target.value })}
           >
-            <option value="127.0.0.1">127.0.0.1 (localhost only)</option>
-            <option value="0.0.0.0">0.0.0.0 (all interfaces)</option>
+            <option value="loopback">Loopback (localhost only)</option>
+            <option value="lan">LAN (0.0.0.0 — all interfaces)</option>
+            <option value="tailnet">Tailnet (Tailscale IP only)</option>
+            <option value="auto">Auto</option>
           </select>
-          <span className="field-hint">Use localhost for security. Use 0.0.0.0 only for remote access.</span>
+          <span className="field-hint">Use loopback for security. Use lan only for remote access.</span>
         </div>
       </div>
 
@@ -118,6 +120,49 @@ export default function GatewayPage() {
             </span>
           </div>
         )}
+      </div>
+
+      {/* Advanced Architecture */}
+      <div className="form-section" style={{ marginTop: 'var(--space-xl)' }}>
+        <h3 className="form-section-title">⚙️ Advanced Architecture</h3>
+        <p className="field-hint" style={{ marginBottom: 'var(--space-lg)' }}>
+          Fine-tune the Agent Loop, Session Management, and Message Delivery.
+        </p>
+        
+        <div className="form-grid form-grid-2">
+          {/* Queue Mode */}
+          <div className="field">
+            <label className="field-label">Queue Mode</label>
+            <select
+              className="field-select"
+              value={state.config.messages.queue.mode}
+              onChange={(e) => dispatch({ 
+                type: 'UPDATE_CONFIG', 
+                payload: { messages: { queue: { mode: e.target.value } } } 
+              })}
+            >
+              <option value="collect">Collect (Coalesce messages)</option>
+              <option value="steer">Steer (Inject immediately)</option>
+              <option value="followup">Followup (Sequential)</option>
+            </select>
+          </div>
+
+          {/* Compaction */}
+          <div className="field">
+            <label className="field-label">Compaction Mode</label>
+            <select
+              className="field-select"
+              value={state.config.agents.defaults.compaction?.mode || 'default'}
+              onChange={(e) => dispatch({ 
+                type: 'UPDATE_CONFIG', 
+                payload: { agents: { defaults: { compaction: { mode: e.target.value } } } } 
+              })}
+            >
+              <option value="default">Default</option>
+              <option value="safeguard">Safeguard (Chunked Summarization)</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div className="nav-footer">

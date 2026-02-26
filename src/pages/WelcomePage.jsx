@@ -90,6 +90,32 @@ export default function WelcomePage() {
           Continue →
         </button>
       </div>
+
+      {/* Quick Install Guide */}
+      <div className="form-section" style={{ marginTop: 'var(--space-xxl)', borderTop: '1px solid var(--border-color)', paddingTop: 'var(--space-xl)' }}>
+        <h3 className="form-section-title">📦 Don't have OpenClaw Core yet?</h3>
+        <p className="field-hint" style={{ marginBottom: 'var(--space-lg)' }}>
+          Run the official installer to set up the OpenClaw engine on your machine.
+        </p>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+          <div className="glass-card" style={{ padding: 'var(--space-md)' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>🍎 macOS / 🐧 Linux / 🦞 WSL2</h4>
+            <code style={{ display: 'block', fontSize: '11px', background: 'var(--bg-primary)', padding: '10px', borderRadius: '4px', color: 'var(--text-accent)' }}>
+              curl -fsSL https://openclaw.ai/install.sh | bash
+            </code>
+          </div>
+          <div className="glass-card" style={{ padding: 'var(--space-md)' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>🪟 Windows (PowerShell)</h4>
+            <code style={{ display: 'block', fontSize: '11px', background: 'var(--bg-primary)', padding: '10px', borderRadius: '4px', color: 'var(--text-accent)' }}>
+              iwr -useb https://openclaw.ai/install.ps1 | iex
+            </code>
+          </div>
+        </div>
+        <p className="field-hint" style={{ marginTop: 'var(--space-md)', textAlign: 'center' }}>
+          See <a href="https://docs.openclaw.ai/install" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-accent)' }}>Official Install Docs</a> for more methods (Docker, Nix, Ansible).
+        </p>
+      </div>
     </div>
   )
 }

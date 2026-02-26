@@ -3,12 +3,15 @@ import { TOOL_GROUPS } from '../data/templates'
 
 export default function ToolsSkillsPage() {
   const { state, dispatch, nextStep, prevStep } = useWizard()
-  const disabledTools = state.config.tools.disabled
+  const deniedTools = state.config.tools?.deny || []
 
-  const isGroupDisabled = (groupId) => disabledTools.includes(groupId)
+  const isGroupDenied = (groupId) => deniedTools.includes(groupId)
 
   const toggleGroup = (groupId) => {
-    dispatch({ type: 'TOGGLE_TOOL_DISABLED', payload: groupId })
+    const deny = deniedTools.includes(groupId)
+      ? deniedTools.filter(t => t !== groupId)
+      : [...deniedTools, groupId]
+    dispatch({ type: 'UPDATE_CONFIG', payload: { tools: { deny } } })
   }
 
   return (
@@ -28,7 +31,7 @@ export default function ToolsSkillsPage() {
 
         <div className="card-grid card-grid-2">
           {TOOL_GROUPS.map((group, i) => {
-            const disabled = isGroupDisabled(group.id)
+            const disabled = isGroupDenied(group.id)
             return (
               <div
                 key={group.id}
@@ -68,6 +71,64 @@ export default function ToolsSkillsPage() {
           })}
         </div>
       </div>
+
+      {/* Browser Config */}
+      {!isGroupDenied('group:ui') && (
+        <div className="form-section animate-in" style={{ marginTop: 'var(--space-xl)' }}>
+          <h3 className="form-section-title">🌐 Browser Configuration</h3>
+          <p className="field-hint" style={{ marginBottom: 'var(--space-lg)' }}>
+            Configure how the agent interacts with web pages.
+          </p>
+
+          <div className="form-grid form-grid-3">
+            <div className="field">
+              <label className="field-label">Default Profile</label>
+              <select
+                className="field-select"
+                value={state.config.browser.defaultProfile}
+                onChange={(e) => dispatch({ 
+                  type: 'UPDATE_CONFIG', 
+                  payload: { browser: { defaultProfile: e.target.value } } 
+                })}
+              >
+                <option value="chrome">Chrome (Extension Relay)</option>
+                <option value="openclaw">OpenClaw (Managed)</option>
+              </select>
+              <span className="field-hint">Extension relay uses your current browser.</span>
+            </div>
+
+            <div className="field">
+              <label className="field-label">Headless Mode</label>
+              <select
+                className="field-select"
+                value={state.config.browser.headless ? 'on' : 'off'}
+                onChange={(e) => dispatch({ 
+                  type: 'UPDATE_CONFIG', 
+                  payload: { browser: { headless: e.target.value === 'on' } } 
+                })}
+              >
+                <option value="off">Off (Visible - Recommended)</option>
+                <option value="on">On (Hidden)</option>
+              </select>
+            </div>
+
+            <div className="field">
+              <label className="field-label">Private Network Access</label>
+              <select
+                className="field-select"
+                value={state.config.browser.ssrfPolicy.dangerouslyAllowPrivateNetwork ? 'on' : 'off'}
+                onChange={(e) => dispatch({ 
+                  type: 'UPDATE_CONFIG', 
+                  payload: { browser: { ssrfPolicy: { dangerouslyAllowPrivateNetwork: e.target.value === 'on' } } } 
+                })}
+              >
+                <option value="on">Allow (Trusted Network)</option>
+                <option value="off">Deny (Strict Public-only)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Skills info */}
       <div className="form-section" style={{ marginTop: 'var(--space-xl)' }}>

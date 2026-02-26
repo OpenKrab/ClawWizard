@@ -1,31 +1,43 @@
 import { useState, useEffect, useRef } from 'react'
 import { useWizard } from '../context/WizardContext'
+import { MODEL_PROVIDERS, MESSAGING_CHANNELS } from '../data/templates'
 
 export default function PreviewDeployPage() {
   const { state, generateConfig, prevStep } = useWizard()
   const [copied, setCopied] = useState(false)
-  const [showDeploy, setShowDeploy] = useState(false)
+  const [showManual, setShowManual] = useState(false)
   const [deploying, setDeploying] = useState(false)
   const [logs, setLogs] = useState([])
-  const [deployStatus, setDeployStatus] = useState(null)
+  const [deployStatus, setDeployStatus] = useState(null) // null | 'running' | 'success' | 'warning' | 'error'
+  const [showLogs, setShowLogs] = useState(false)
+  const [showConfig, setShowConfig] = useState(false)
   const logEndRef = useRef(null)
+  const eventSourceRef = useRef(null)
 
   const config = generateConfig()
   const configJson = JSON.stringify(config, null, 2)
 
+  const currentProvider = MODEL_PROVIDERS.find(p => p.id === state.provider)
+  const enabledChannels = MESSAGING_CHANNELS.filter(c => state.config.channels[c.id]?.enabled)
+
   useEffect(() => {
-    if (logEndRef.current) {
+    if (logEndRef.current && showLogs) {
       logEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [logs])
+  }, [logs, showLogs])
+
+  // Cleanup EventSource on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) eventSourceRef.current.close()
+    }
+  }, [])
 
   // Validation warnings
   const warnings = []
   if (!state.config.agents.defaults.model.primary) warnings.push('No model selected')
   if (!state.apiKey && !state.skippedFields.includes('apiKey') && state.provider !== 'ollama') warnings.push('No API key provided')
-  const enabledChannels = Object.entries(state.config.channels).filter(([, v]) => v.enabled)
   if (enabledChannels.length === 0) warnings.push('No channels enabled')
-  if (state.skippedFields.length > 0) warnings.push(`${state.skippedFields.length} field(s) skipped — fill them before deploying`)
 
   const handleCopy = () => {
     navigator.clipboard.writeText(configJson)
@@ -45,7 +57,14 @@ export default function PreviewDeployPage() {
 
   const handleLiveDeploy = async () => {
     setDeploying(true)
-    setLogs(['🚀 Starting deployment...', '📁 Validating config...', '📝 Writing openclaw.json and .env to ~/.openclaw/'])
+    setShowLogs(true)
+    setLogs([
+      '🦞 ClawWizard Deploy Starting...',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '📁 Writing openclaw.json...',
+      '🔑 Writing .env credentials...',
+      '🎭 Writing SOUL.md...',
+    ])
     setDeployStatus('running')
 
     try {
@@ -53,48 +72,129 @@ export default function PreviewDeployPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          config: config,
-          env: state.config.env, // Should be merging apiKey if not skipped
-          soulMd: state.soulMd
+          config,
+          env: state.config.env || {},
+          soulMd: state.soulMd || '',
+          workspaceFiles: state.workspaceFiles || {},
+          provider: state.provider || '',
+          apiKey: state.apiKey || '',
+          gatewayPort: state.config.gateway?.port || 18789,
+          gatewayBind: state.config.gateway?.bind || 'loopback',
+          useNonInteractive: true,
         })
       })
 
       const result = await response.json()
+
+      if (result.steps) {
+        setLogs(prev => [...prev, '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', ...result.steps])
+      }
       
       if (result.success) {
-        setLogs(prev => [...prev, `✅ ${result.message}`])
-        setDeployStatus('success')
+        setDeployStatus(result.needsManual ? 'warning' : 'success')
+        setLogs(prev => [...prev, '', result.needsManual
+          ? '⚠️ Config written. Install OpenClaw CLI then run: openclaw onboard'
+          : '🎉 Deployment complete!'
+        ])
         
-        // Start streaming logs
-        const eventSource = new EventSource('/api/logs')
-        eventSource.onmessage = (event) => {
-          const data = JSON.parse(event.data)
-          setLogs(prev => [...prev.slice(-100), data.msg])
+        // Stream live logs (keep last 50 only)
+        if (!result.needsManual) {
+          try {
+            const es = new EventSource('/api/logs')
+            eventSourceRef.current = es
+            es.onmessage = (event) => {
+              const data = JSON.parse(event.data)
+              setLogs(prev => [...prev.slice(-50), data.msg])
+            }
+            es.onerror = () => es.close()
+          } catch { /* ignore */ }
         }
-        eventSource.onerror = () => eventSource.close()
       } else {
         setLogs(prev => [...prev, `❌ Error: ${result.error || 'Failed to deploy'}`])
         setDeployStatus('error')
       }
     } catch (e) {
-      setLogs(prev => [...prev, `❌ Error connecting to bridge: ${e.message}`, '💡 Make sure "npm run dev" is running with the bridge active.'])
+      setLogs(prev => [
+        ...prev,
+        `❌ Bridge server unreachable: ${e.message}`,
+        '💡 Make sure npm run dev is running',
+      ])
       setDeployStatus('error')
     } finally {
       setDeploying(false)
     }
   }
 
+  const manualSteps = [
+    { title: 'Install OpenClaw CLI', cmd: 'npm install -g openclaw@latest', desc: 'Node.js 22+ required.' },
+    { title: 'Provider Setup', cmd: currentProvider?.cliSetup || 'openclaw onboard', desc: `Authenticate with ${currentProvider?.name || 'provider'}.` },
+    { title: 'Security & Access', cmd: state.config.gateway.tailscale?.mode !== 'off' ? `openclaw configure --tailscale ${state.config.gateway.tailscale.mode}` : 'openclaw gateway status', desc: 'Verify gateway security.' },
+  ]
+  enabledChannels.forEach(chan => manualSteps.push({ title: `Pair ${chan.name}`, cmd: chan.cliSetup, desc: `Connect to ${chan.name}.` }))
+  manualSteps.push({ title: 'Health Check', cmd: 'openclaw doctor', desc: 'Verify everything works.' })
+
+  // ──────── Status Dashboard (shown after deploy) ────────
+  const statusBanner = {
+    success: { icon: '🎉', title: 'Gateway is Running!', color: 'var(--status-success)', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.3)' },
+    warning: { icon: '⚠️', title: 'Config Written — Manual Steps Needed', color: 'var(--status-warning)', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.3)' },
+    error:   { icon: '❌', title: 'Deployment Failed', color: 'var(--status-error)', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.3)' },
+    running: { icon: '⏳', title: 'Deploying...', color: 'var(--text-accent)', bg: 'rgba(255,107,53,0.08)', border: 'rgba(255,107,53,0.3)' },
+  }
+
+  const statusCards = [
+    { icon: '🌐', label: 'Gateway', value: `ws://127.0.0.1:${state.config.gateway?.port || 18789}`, status: deployStatus === 'success' },
+    { icon: '🤖', label: 'Model', value: state.config.agents.defaults.model.primary || 'Not set', status: !!state.config.agents.defaults.model.primary },
+    { icon: '💬', label: 'Channels', value: enabledChannels.length > 0 ? enabledChannels.map(c => c.name).join(', ') : 'None', status: enabledChannels.length > 0 },
+    { icon: '🔐', label: 'Auth', value: state.config.gateway?.auth?.mode || 'token', status: true },
+    { icon: '🔗', label: 'Tailscale', value: state.config.gateway?.tailscale?.mode || 'off', status: state.config.gateway?.tailscale?.mode !== 'off' },
+    { icon: '📁', label: 'Workspace', value: state.config.agents.defaults.workspace, status: true },
+  ]
+
   return (
     <div className="animate-in">
       <div className="page-header">
         <h1 className="page-title">Preview & Deploy</h1>
         <p className="page-subtitle">
-          Review your configuration, then deploy. The generated config goes to <code style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', background: 'var(--glass-bg)', padding: '2px 6px', borderRadius: '4px' }}>~/.openclaw/openclaw.json</code>.
+          Review your configuration, then deploy to <code style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', background: 'var(--glass-bg)', padding: '2px 6px', borderRadius: '4px' }}>~/.openclaw/openclaw.json</code>
         </p>
       </div>
 
-      {/* Warnings */}
-      {warnings.length > 0 && (
+      {/* ──── Deploy Status Banner ──── */}
+      {deployStatus && (
+        <div className="animate-in" style={{
+          padding: 'var(--space-lg)',
+          background: statusBanner[deployStatus].bg,
+          border: `1px solid ${statusBanner[deployStatus].border}`,
+          borderRadius: 'var(--radius-lg)',
+          marginBottom: 'var(--space-xl)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-lg)',
+        }}>
+          <span style={{ fontSize: '40px' }}>{statusBanner[deployStatus].icon}</span>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: statusBanner[deployStatus].color, marginBottom: '4px' }}>
+              {statusBanner[deployStatus].title}
+            </h3>
+            {deployStatus === 'success' && (
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                Your OpenClaw agent is live and connected. Gateway is accepting connections on port {state.config.gateway?.port || 18789}.
+              </p>
+            )}
+            {deployStatus === 'error' && (
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                Check the logs below for details. You can also try the manual deployment steps.
+              </p>
+            )}
+          </div>
+          {deployStatus === 'success' && (
+            <span className="badge badge-success" style={{ fontSize: '12px', padding: '6px 14px' }}>● ONLINE</span>
+          )}
+        </div>
+      )}
+
+      {/* ──── Warnings ──── */}
+      {warnings.length > 0 && !deployStatus && (
         <div style={{ marginBottom: 'var(--space-xl)' }}>
           {warnings.map((w, i) => (
             <div key={i} style={{
@@ -105,9 +205,6 @@ export default function PreviewDeployPage() {
               marginBottom: 'var(--space-xs)',
               fontSize: '13px',
               color: 'var(--status-warning)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-sm)',
             }}>
               ⚠️ {w}
             </div>
@@ -115,153 +212,176 @@ export default function PreviewDeployPage() {
         </div>
       )}
 
-      {/* Main Content Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: logs.length > 0 ? '1fr 1fr' : '1fr', gap: 'var(--space-xl)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
-          {/* Config Summary */}
-          <div className="form-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
-              <h3 className="form-section-title" style={{ margin: 0 }}>📄 openclaw.json</h3>
-              <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-                <button className="btn btn-ghost btn-sm" onClick={handleCopy}>
-                  {copied ? '✓ Copied!' : '📋 Copy'}
-                </button>
-                <button className="btn btn-secondary btn-sm" onClick={handleDownload}>
-                  💾 Download
-                </button>
+      {/* ──── Status Cards (after deploy) ──── */}
+      {deployStatus && deployStatus !== 'running' && (
+        <div className="card-grid card-grid-3 animate-in" style={{ marginBottom: 'var(--space-xl)' }}>
+          {statusCards.map((card, i) => (
+            <div key={i} className="glass-card" style={{
+              padding: 'var(--space-md)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-md)',
+              borderColor: card.status ? 'rgba(34,197,94,0.2)' : 'var(--glass-border)',
+            }}>
+              <span style={{ fontSize: '22px' }}>{card.icon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {card.label}
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {card.value}
+                </div>
               </div>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: card.status ? 'var(--status-success)' : 'var(--text-tertiary)', flexShrink: 0 }} />
             </div>
-            <pre className="code-editor" style={{ minHeight: '300px', maxHeight: '500px', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-              {configJson}
-            </pre>
+          ))}
+        </div>
+      )}
+
+      {/* ──── Deploy Actions ──── */}
+      <div className="form-section">
+        <h3 className="form-section-title">🚀 Deploy</h3>
+        <div className="card-grid card-grid-2">
+          <div className="glass-card" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+            <span style={{ fontSize: '32px', marginBottom: 'var(--space-md)', display: 'block' }}>💻</span>
+            <h4 style={{ fontWeight: 700, marginBottom: 'var(--space-sm)' }}>Deploy Local Machine</h4>
+            <p className="field-hint" style={{ marginBottom: 'var(--space-lg)' }}>
+              Write configs and start OpenClaw gateway on this machine.
+            </p>
+            <button 
+              className={`btn btn-primary btn-lg`}
+              disabled={deploying || (warnings.length > 0 && !deployStatus)}
+              onClick={handleLiveDeploy}
+              style={{ width: '100%' }}
+            >
+              {deploying ? '⏳ Deploying...' : deployStatus === 'success' ? '🔄 Re-deploy' : 'Deploy Now 🚀'}
+            </button>
           </div>
 
-          {/* SOUL.md Preview */}
-          {state.soulMd && (
-            <div className="form-section">
-              <h3 className="form-section-title">🎭 SOUL.md</h3>
-              <pre className="code-editor" style={{ minHeight: '100px', whiteSpace: 'pre-wrap' }}>
-                {state.soulMd}
-              </pre>
-            </div>
-          )}
+          <div className="glass-card" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+            <span style={{ fontSize: '32px', marginBottom: 'var(--space-md)', display: 'block' }}>📋</span>
+            <h4 style={{ fontWeight: 700, marginBottom: 'var(--space-sm)' }}>Manual Instructions</h4>
+            <p className="field-hint" style={{ marginBottom: 'var(--space-lg)' }}>
+              CLI commands based on your selected provider and channels.
+            </p>
+            <button className="btn btn-secondary btn-lg" onClick={() => setShowManual(!showManual)} style={{ width: '100%' }}>
+              {showManual ? 'Hide Instructions' : 'Show Instructions'}
+            </button>
+          </div>
         </div>
+      </div>
 
-        {/* Live Terminal Logs */}
-        {logs.length > 0 && (
-          <div className="form-section animate-in">
-            <h3 className="form-section-title">🛰️ Deployment Logs</h3>
+      {/* ──── Manual Steps ──── */}
+      {showManual && (
+        <div className="glass-card animate-in" style={{ padding: 'var(--space-xl)', marginTop: 'var(--space-lg)' }}>
+          <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: 'var(--space-lg)' }}>📋 CLI Deployment Steps</h4>
+          {manualSteps.map((item, idx) => (
+            <div key={idx} style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-md)', alignItems: 'flex-start' }}>
+              <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--accent-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                {idx + 1}
+              </span>
+              <div style={{ flex: 1 }}>
+                <h5 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>{item.title}</h5>
+                <pre style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '12px', background: 'var(--bg-primary)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', color: 'var(--text-accent)', marginBottom: '2px', whiteSpace: 'pre-wrap' }}>
+                  {item.cmd}
+                </pre>
+                <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{item.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ──── Config Preview (collapsible) ──── */}
+      <div className="form-section" style={{ marginTop: 'var(--space-xl)' }}>
+        <div 
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+          onClick={() => setShowConfig(!showConfig)}
+        >
+          <h3 className="form-section-title" style={{ margin: 0 }}>📄 openclaw.json</h3>
+          <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'center' }}>
+            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleCopy() }}>
+              {copied ? '✓ Copied!' : '📋 Copy'}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleDownload() }}>
+              💾 Download
+            </button>
+            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+              {showConfig ? '▼' : '▶'}
+            </span>
+          </div>
+        </div>
+        {showConfig && (
+          <pre className="code-editor animate-in" style={{ marginTop: 'var(--space-md)', maxHeight: '400px', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {configJson}
+          </pre>
+        )}
+      </div>
+
+      {/* ──── Deployment Logs (collapsible) ──── */}
+      {logs.length > 0 && (
+        <div className="form-section" style={{ marginTop: 'var(--space-lg)' }}>
+          <div 
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+            onClick={() => setShowLogs(!showLogs)}
+          >
+            <h3 className="form-section-title" style={{ margin: 0 }}>
+              🛰️ Deployment Logs
+              {deployStatus === 'success' && <span style={{ fontSize: '10px', marginLeft: '8px', color: 'var(--status-success)' }}>● LIVE</span>}
+            </h3>
+            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+              {showLogs ? '▼ Hide' : '▶ Show'} ({logs.length} lines)
+            </span>
+          </div>
+          {showLogs && (
             <div 
+              className="animate-in"
               style={{ 
-                background: '#000', 
+                background: 'rgba(0,0,0,0.6)',
+                backdropFilter: 'blur(10px)',
                 borderRadius: 'var(--radius-md)', 
                 padding: 'var(--space-md)', 
-                height: '500px', 
+                maxHeight: '250px', 
                 overflowY: 'auto',
                 fontFamily: 'var(--font-mono)',
-                fontSize: '12px',
+                fontSize: '11px',
                 lineHeight: '1.5',
-                color: '#ddd',
-                border: '1px solid var(--border-color)',
-                boxShadow: '0 0 40px rgba(0,0,0,0.5)'
+                color: '#aaa',
+                border: '1px solid var(--glass-border)',
+                marginTop: 'var(--space-md)',
               }}
             >
               {logs.map((log, i) => (
                 <div key={i} style={{ 
-                  color: log.startsWith('✅') ? 'var(--status-success)' : 
-                         log.startsWith('❌') ? 'var(--status-error)' : 
-                         log.startsWith('🚀') ? 'var(--text-accent)' : '#ddd',
-                  marginBottom: '2px',
-                  whiteSpace: 'pre-wrap'
+                  color: log.startsWith('✅') ? '#4ade80' : 
+                         log.startsWith('❌') ? '#f87171' : 
+                         log.startsWith('🚀') || log.startsWith('🎉') ? '#fb923c' :
+                         log.startsWith('⚠️') ? '#fbbf24' :
+                         log.startsWith('━') ? '#444' : '#999',
+                  marginBottom: '1px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
                 }}>
                   {log}
                 </div>
               ))}
               <div ref={logEndRef} />
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Deploy Section */}
-      <div className="form-section" style={{ marginTop: 'var(--space-xl)' }}>
-        <h3 className="form-section-title">🚀 Deploy</h3>
-
-        <div className="card-grid card-grid-2">
-          {/* Remote Option */}
-          <div className={`glass-card ${!showDeploy ? 'active' : ''}`} style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
-            <span style={{ fontSize: '32px', marginBottom: 'var(--space-md)', display: 'block' }}>💻</span>
-            <h4 style={{ fontWeight: 700, marginBottom: 'var(--space-sm)' }}>Deploy Local Machine</h4>
-            <p className="field-hint" style={{ marginBottom: 'var(--space-lg)' }}>
-              Automatically write configs and start OpenClaw daemon on this machine.
-            </p>
-            <button 
-              className={`btn btn-primary btn-lg ${deploying ? 'loading' : ''}`} 
-              disabled={deploying || warnings.length > 0}
-              onClick={handleLiveDeploy}
-            >
-              {deploying ? 'Deploying...' : 'Deploy Now 🚀'}
-            </button>
-          </div>
-
-          {/* Manual Option */}
-          <div className="glass-card" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
-            <span style={{ fontSize: '32px', marginBottom: 'var(--space-md)', display: 'block' }}>📋</span>
-            <h4 style={{ fontWeight: 700, marginBottom: 'var(--space-sm)' }}>Manual Instructions</h4>
-            <p className="field-hint" style={{ marginBottom: 'var(--space-lg)' }}>
-              Get step-by-step commands to deploy OpenClaw on any server.
-            </p>
-            <button className="btn btn-secondary btn-lg" onClick={() => setShowDeploy(!showDeploy)}>
-              {showDeploy ? 'Hide Instructions' : 'Show Instructions'}
-            </button>
-          </div>
+          )}
         </div>
+      )}
 
-        {showDeploy && (
-          <div className="glass-card animate-in" style={{ padding: 'var(--space-xl)', marginTop: 'var(--space-lg)' }}>
-            <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: 'var(--space-lg)' }}>📋 Deployment Steps</h4>
-
-            {[
-              { step: 1, title: 'Install OpenClaw', cmd: 'npm install -g openclaw@latest', desc: 'Requires Node.js 22+' },
-              { step: 2, title: 'Save config file', cmd: 'Download the config above and save to ~/.openclaw/openclaw.json', desc: 'Or use the Download button' },
-              { step: 3, title: 'Save SOUL.md', cmd: state.soulMd ? 'Save SOUL.md to ~/.openclaw/workspace/SOUL.md' : '(Optional) No custom personality set', desc: 'If you wrote a custom system prompt' },
-              { step: 4, title: 'Install daemon & start', cmd: 'openclaw onboard --install-daemon', desc: 'Installs background service and starts gateway' },
-              { step: 5, title: 'Verify', cmd: 'openclaw doctor', desc: 'Check that everything is running correctly' },
-              { step: 6, title: 'Open dashboard', cmd: 'openclaw dashboard', desc: 'Opens the web control UI in your browser' },
-            ].map((item) => (
-              <div
-                key={item.step}
-                style={{
-                  display: 'flex',
-                  gap: 'var(--space-md)',
-                  marginBottom: 'var(--space-lg)',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <span style={{
-                  width: '28px', height: '28px', borderRadius: '50%',
-                  background: 'var(--accent-gradient)', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
-                  fontSize: '13px', fontWeight: 700, color: 'white', flexShrink: 0,
-                }}>
-                  {item.step}
-                </span>
-                <div style={{ flex: 1 }}>
-                  <h5 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>{item.title}</h5>
-                  <code style={{
-                    display: 'block', fontFamily: 'var(--font-mono)', fontSize: '13px',
-                    background: 'var(--bg-primary)', padding: '8px 12px', borderRadius: 'var(--radius-sm)',
-                    color: 'var(--text-accent)', marginBottom: '4px',
-                  }}>
-                    {item.cmd}
-                  </code>
-                  <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{item.desc}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* ──── SOUL.md (collapsible) ──── */}
+      {state.soulMd && (
+        <details style={{ marginTop: 'var(--space-lg)' }}>
+          <summary style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', padding: 'var(--space-sm) 0' }}>
+            🎭 SOUL.md Preview
+          </summary>
+          <pre className="code-editor" style={{ marginTop: 'var(--space-sm)', maxHeight: '200px', overflow: 'auto', whiteSpace: 'pre-wrap' }}>
+            {state.soulMd}
+          </pre>
+        </details>
+      )}
 
       <div className="nav-footer">
         <button className="btn btn-ghost" onClick={prevStep}>← Back</button>
