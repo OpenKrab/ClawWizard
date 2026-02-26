@@ -1,0 +1,54 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/node-18@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Create Zip Archive
+        run: |
+          zip -r ClawWizard-${{ github.ref_name }}.zip . -x ".git/*" "node_modules/*" ".github/*" "dist/*"
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ClawWizard-${{ github.ref_name }}.zip
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## 🦞 ClawWizard ${{ github.ref_name }}
+
+            Welcome to the new release of ClawWizard!
+
+            ### 🚀 What's New
+            - Full interactive wizard for OpenClaw.
+            - Integrated bridge server for live deployment.
+            - One-click Node.js installer for Windows.
+            - Professional glassmorphism design.
+
+            ### 📦 Installation
+            1. Download the `ClawWizard.zip` below.
+            2. Extract it to a folder.
+            3. Follow the instructions in `README.md` or `README_TH.md`.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
