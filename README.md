@@ -1,20 +1,25 @@
 # 🦞 ClawWizard
 
-**ClawWizard** is a premium, interactive setup wizard for [OpenClaw](https://github.com/openclaw/openclaw), your personal AI assistant. It provides a full-featured GUI for configuring every aspect of the OpenClaw Gateway, from model providers to messaging channels and agent skills.
+**ClawWizard** is a premium, interactive setup wizard for [OpenClaw](https://github.com/openclaw/openclaw), your personal AI assistant. It provides a full-featured GUI for configuring every aspect of the OpenClaw Gateway — from model providers to messaging channels, agent workspace, persona templates, and one-click deployment.
 
 <p align="center">
   <img src="/public/banner.png" alt="ClawWizard Banner" width="700">
 </p>
 
-## Features
+## ✨ Features
 
-- **🎯 Interactive Onboarding**: Step-by-step guidance for beginners and power users alike.
-- **🤖 Provider & Model Picker**: Support for 19+ LLM providers including Anthropic, OpenAI, Kilocode, Ollama, and more.
-- **💬 Channel Management**: Easy configuration for WhatsApp, Telegram, Discord, Slack, and 10+ other platforms.
+- **🎯 Interactive Onboarding**: Step-by-step wizard guidance for beginners and power users alike.
+- **🤖 Provider & Model Picker**: Support for 20+ LLM providers including Anthropic, OpenAI, Kilocode, Ollama, OpenRouter, Groq, Gemini, DeepSeek, Mistral, and more.
+- **💬 Channel Management**: Easy configuration for **20+ platforms** — WhatsApp, Telegram, Discord, Slack, Signal, iMessage, BlueBubbles, LINE, Matrix, Nextcloud Talk, Microsoft Teams, Feishu, Mattermost, Google Chat, Tlon, Nostr, IRC, Twitch, Zalo, Synology Chat.
+- **👥 Group Chat Support**: Per-group access control with `groupPolicy` (allowlist/blocklist/public) and per-group `requireMention` settings.
+- **🔐 Pairing Workflow**: Guided DM pairing flow for secure private messaging (via `openclaw pairing approve`).
+- **🎭 Workspace Templates**: 15+ pre-built persona and config templates for every OpenClaw system file (`AGENTS.md`, `SOUL.md`, `IDENTITY`, `BOOT.md`, `BOOTSTRAP.md`, `HEARTBEAT.md`, `TOOLS.md`, `USER`). Includes AI-agent styles, funny troll personas, and professional presets.
 - **🛠️ Tools & Skills**: Select and configure tool groups for your AI agent.
-- **🚀 Live Deployment**: Write configuration files directly to `~/.openclaw/` and manage the OpenClaw daemon from the browser.
+- **🚀 Live Deployment**: One-click deployment that writes config files directly to `~/.openclaw/`, starts the gateway, and **auto-opens the OpenClaw Dashboard & TUI** in your browser and terminal.
 - **🛰️ Log Streaming**: Watch your AI assistant come to life with real-time log streaming in a web-based terminal.
 - **💎 Premium Design**: Dark-mode glassmorphism interface with fluid animations and micro-interactions.
+
+---
 
 ## 💡 Manual for Complete Beginners (No Tech Skills Required!)
 
@@ -52,7 +57,7 @@ You need the "engine" to run this app. You have two choices:
 
 - After typing the last command, your browser should open to a beautiful interface. (If it doesn't, copy and paste `http://localhost:5173` into Chrome).
 - **Follow the on-screen instructions**: The wizard will ask you questions one by one. Just fill in the info as requested.
-- **Top Tip**: When you reach the last step, if you have OpenClaw installed on your machine, just click the purple **"Deploy Now"** button. The app will handle the rest for you—no more coding required!
+- **Top Tip**: When you reach the last step, click the purple **"Deploy Now"** button. The app will handle the rest — it will write all your config files, start the OpenClaw Gateway, and automatically open the **Control Dashboard** and **Terminal UI** for you. No more coding required!
 
 ---
 
@@ -72,7 +77,7 @@ You need the "engine" to run this app. You have two choices:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/ClawWizard.git
+   git clone https://github.com/openkrab/ClawWizard.git
    cd ClawWizard
    ```
 
@@ -88,16 +93,38 @@ You need the "engine" to run this app. You have two choices:
    npm run dev
    ```
 
-   *This command runs both the Vite frontend and the Node.js bridge concurrently.*
+   *This command runs both the Vite frontend and the Node.js bridge server concurrently.*
 
 4. Open [http://localhost:5173](http://localhost:5173) in your browser.
 
+---
+
+## 🎭 Workspace Templates
+
+ClawWizard includes a rich library of pre-built templates for every OpenClaw system file. Mix and match to build the perfect AI personality.
+
+| File | Examples |
+|------|---------|
+| `AGENTS.md` | AutoGPT Planner, BabyAGI Queue, Coding Expert, Security Researcher, Minimalist Executor |
+| `SOUL.md` | Sarcastic Bestie, Tsundere AI, Conspiracy Theorist, Stoic, Zen Master, Space Pirate |
+| `IDENTITY` | GLaDOS, J.A.R.V.I.S., Sassy Cat, Gen Z Intern, Hype Bot, Noir Detective |
+| `BOOT.md` | Silent Boot, Git Sync Boot, Daily Welcome, Docker Compose Boot |
+| `BOOTSTRAP.md` | Quick Start, RPG Campaign Init, Auto-detect Stack, Roast Setup |
+| `HEARTBEAT.md` | GitHub Monitor, Server Health, Task Queue (BabyAGI), Focus Enforcer |
+| `TOOLS.md` | Docker Swarm, AWS, K8s, Raspberry Pi, PyTorch ML Stack |
+| `USER` | The Founder, The Micro-Manager, ADHD Creator, Grumpy Sysadmin, The Novelist |
+
+---
+
 ## Project Structure
 
-- `src/context/`: State management and configuration generation logic.
-- `src/pages/`: Modular wizard steps.
-- `src/server/`: Bridge server to interact with the local filesystem and OpenClaw CLI.
-- `src/data/`: Metadata for templates, models, and providers.
+- `src/context/` — State management and configuration generation logic.
+- `src/pages/` — Modular wizard steps (Welcome, Model, Channels, Gateway, Workspace, Deploy).
+- `src/server/` — Bridge server to interact with the local filesystem and OpenClaw CLI.
+- `src/data/templates.js` — Metadata for LLM providers, messaging channels, and use-case presets.
+- `src/data/templates.json` — Workspace persona template library (15+ templates per file type).
+
+---
 
 ## Contributing
 
