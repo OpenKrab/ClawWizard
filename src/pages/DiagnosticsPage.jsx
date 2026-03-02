@@ -1,17 +1,20 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useWizard } from '../context/WizardContext'
 import { DIAGNOSTICS_CHECKS } from '../data/templates'
 
 export default function DiagnosticsPage() {
   const navigate = useNavigate()
   const [results, setResults] = useState({})
+  const [report, setReport] = useState('')
   const [running, setRunning] = useState(false)
 
-  const runDiagnostics = () => {
+  const runDiagnostics = async () => {
     setRunning(true)
     setResults({})
+    setReport('')
 
-    // Simulate diagnostic checks with random results
+    // WEB Fallback (Simulation)
     const statuses = ['ok', 'warn', 'fail']
     const details = {
       ok: ['Running on port 18789', 'API key valid, latency 120ms', 'Connected and receiving messages', 'All tools accessible', 'Daemon active (systemd)', 'Config valid against schema'],
@@ -34,6 +37,8 @@ export default function DiagnosticsPage() {
       }, (i + 1) * 600)
     })
   }
+
+  // --- Add Report Preview below the list ---
 
   return (
     <div className="animate-in">
@@ -87,6 +92,16 @@ export default function DiagnosticsPage() {
           )
         })}
       </div>
+
+      {/* Doctor Report Preview */}
+      {report && (
+        <div className="form-section" style={{ marginTop: 'var(--space-2xl)' }}>
+          <h3 className="form-section-title">📋 Full Doctor Report</h3>
+          <pre className="code-editor" style={{ maxHeight: '400px', overflow: 'auto', fontSize: '12px' }}>
+            {report}
+          </pre>
+        </div>
+      )}
 
       {/* Common issues */}
       <div className="form-section" style={{ marginTop: 'var(--space-2xl)' }}>

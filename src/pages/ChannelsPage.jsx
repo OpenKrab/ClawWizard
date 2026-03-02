@@ -1,13 +1,49 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWizard } from '../context/WizardContext'
 import { MESSAGING_CHANNELS } from '../data/templates'
 
 export default function ChannelsPage() {
   const { state, dispatch, nextStep, prevStep } = useWizard()
   const [expandedChannel, setExpandedChannel] = useState(null)
+  const [pairingList, setPairingList] = useState([])
+  const [loadingPairing, setLoadingPairing] = useState(false)
+  const [approveCode, setApproveCode] = useState('')
 
   const channels = state.config.channels
   const channelIds = MESSAGING_CHANNELS.map(c => c.id)
+
+  const fetchPairing = async (id) => {
+    setLoadingPairing(true)
+    try {
+      const res = await fetch(`/api/pairing/list?channel=${id}`)
+      const list = await res.json()
+      setPairingList(list || [])
+    } catch {
+      setPairingList([])
+    } finally {
+      setLoadingPairing(false)
+    }
+  }
+
+  const handleApprove = async (id, code) => {
+    try {
+      await fetch('/api/pairing/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: id, code })
+      })
+      fetchPairing(id)
+      setApproveCode('')
+    } catch (err) {
+      alert(`Approval failed: ${err}`)
+    }
+  }
+
+  useEffect(() => {
+    if (expandedChannel) {
+      fetchPairing(expandedChannel)
+    }
+  }, [expandedChannel])
 
   const toggleChannel = (id) => {
     dispatch({
@@ -106,12 +142,36 @@ export default function ChannelsPage() {
                     )}
 
                     {/* CLI Setup Instructions */}
+                      <div className="field">
+                        <label className="field-label">CLI Pairing Command</label>
+                        <pre className="code-block" style={{ fontSize: '11px', padding: '12px' }}>
+                          {channel.cliSetup}
+                        </pre>
+                        <p className="field-hint">Run these commands in your terminal to link the channel.</p>
+                      </div>
+
+                    {/* Live Pairing Requests */}
                     <div className="field" style={{ gridColumn: '1 / -1' }}>
-                      <label className="field-label">CLI Pairing Command</label>
-                      <pre className="code-block" style={{ fontSize: '11px', padding: '12px' }}>
-                        {channel.cliSetup}
-                      </pre>
-                      <p className="field-hint">Run these commands in your terminal to link the channel.</p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label className="field-label">Pending Pairing Requests</label>
+                        <button className="btn btn-ghost btn-sm" onClick={() => fetchPairing(id)}>🔄 Refresh</button>
+                      </div>
+                      <div className="glass-card" style={{ padding: 'var(--space-md)', background: 'rgba(255,255,255,0.02)' }}>
+                        {loadingPairing ? (
+                          <p className="field-hint">Loading...</p>
+                        ) : (pairingList || []).length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {pairingList.map(p => (
+                              <div key={p.account + p.peer} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '12px' }}>{p.peer} ({p.account})</span>
+                                <button className="btn btn-primary btn-sm" onClick={() => handleApprove(id, p.code)}>Approve</button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="field-hint">No pending requests found.</p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Manual Input (e.g. Bot Token) */}

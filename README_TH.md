@@ -15,7 +15,9 @@
 - **🔐 ระบบ Pairing**: ขั้นตอนการจับคู่สำหรับแชทส่วนตัวที่ปลอดภัย (ผ่านคำสั่ง `openclaw pairing approve`)
 - **🎭 เทมเพลตเอเจนต์ (Workspace Templates)**: มีเทมเพลตสำเร็จรูปกว่า 15+ แบบสำหรับทุกไฟล์ของ OpenClaw (`AGENTS.md`, `SOUL.md`, `IDENTITY` ฯลฯ) ครอบคลุมทั้งแนว AI-agent สายเทพ, บอทปั่นๆ ตลกๆ และแบบมืออาชีพ
 - **🛠️ เครื่องมือและทักษะ**: เลือกและตั้งค่ากลุ่มเครื่องมือ (Tool Groups) สำหรับเอเจนต์ AI ของคุณ
-- **🚀 การติดตั้งจริง (One-click Deploy)**: เขียนไฟล์การตั้งค่าลงเครื่องที่ `~/.openclaw/` อัตโนมัติ พร้อมรัน Gateway และ **เปิดหน้า Dashboard กับ TUI (Terminal UI)** ให้คุณทันที
+- **🚀 การติดตั้งจริง (One-click Deploy)**: ติดตั้งได้ทั้งในเครื่อง (Local) หรือ **VPS ผ่าน SSH** ระบบจะเขียนไฟล์, รัน Gateway และเปิดหน้า Dashboard ให้คุณทันที
+- **☁️ รองรับ Cloud/Remote**: มีระบบจัดการ SSH ในตัว ช่วยให้คุณติดตั้ง OpenClaw บน Linux Server ได้โดยตรงจากหน้า Wizard
+- **🖥️ แอปเดสก์ท็อป (Native App)**: รันเป็นโปรแกรมขนาดเล็กบน Windows และ macOS ได้โดยไม่ต้องใช้เบราว์เซอร์ (ผ่าน **Tauri**)
 - **🛰️ การแสดง Log แบบ Real-time**: รับชมการทำงานของเอเจนต์ AI ผ่านหน้าจอ Terminal บนเว็บแบบสด ๆ
 - **💎 ดีไซน์ระดับพรีเมียม**: อินเตอร์เฟซสไตล์ Glassmorphism โหมดมืด พร้อมแอนิเมชันที่ไหลลื่น
 
@@ -78,11 +80,12 @@ flowchart TD
     subgraph STEP7["ขั้นตอนที่ 7 · สรุปและรัน"]
         H[ตรวจสอบไฟล์ openclaw.json]
         H --> I{เลือกวิธีรัน?}
-        I -- รันทันที (Live Deploy) --> J[🚀 เขียนไฟล์ลงเครื่อง\nสั่งเริ่ม Gateway\nตรวจสอบสถานะ]
-        I -- ใส่โค้ดเอง (Manual) --> K[📋 ก๊อปปี้คำสั่ง CLI\nหรือโหลดไฟล์ไปวางเอง]
+        I -- รันในเครื่อง (Local) --> J[🚀 เขียนไฟล์ลงเครื่อง\nสั่งเริ่ม Gateway]
+        I -- รันบนรีโมท (Remote) --> JR[☁️ เชื่อมต่อ SSH\nติดตั้งและรันบน VPS]
+        I -- ใส่โค้ดเอง (Manual) --> K[📋 ก๊อปปี้คำสั่ง CLI]
     end
 
-    J --> L[✅ บอทออนไลน์แล้ว!\nเปิดระบบหลังบ้าน (Dashboard) 🌐\nเปิดหน้าจอควบคุม (TUI) 💻]
+    J & JR --> L[✅ บอทออนไลน์แล้ว!\nเปิดหน้า Dashboard 🌐\nเปิดหน้าจอควบคุม 💻]
     K --> M[⚙️ พิมพ์: openclaw onboard\nตามด้วย: openclaw pairing approve]
 
     style A fill:#ff6b35,color:#fff,stroke:none
@@ -172,11 +175,20 @@ flowchart TD
 
    *คำสั่งนี้จะรันทั้ง Vite frontend และ Node.js bridge พร้อมกัน*
 
+4. **รันเป็นแอปเดสก์ท็อป (Native App):**
+
+   ```bash
+   # ตรวจสอบว่าคุณมี Rust ในเครื่องแล้ว
+   npm install
+   npx tauri dev
+   ```
+
 ### 🐳 การใช้งานผ่าน Docker (ทางเลือก)
 
 หากคุณต้องการรัน ClawWizard ผ่าน Container:
 
 1. **สร้างและรัน**:
+
    ```bash
    docker-compose up -d
    ```
@@ -189,7 +201,7 @@ flowchart TD
 
 ---
 
-4. เปิดเบราว์เซอร์ไปที่ [http://localhost:5173](http://localhost:5173)
+1. เปิดเบราว์เซอร์ไปที่ [http://localhost:5173](http://localhost:5173)
 
 ---
 

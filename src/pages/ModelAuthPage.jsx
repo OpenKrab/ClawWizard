@@ -19,6 +19,7 @@ export default function ModelAuthPage() {
   const fetchAllModels = async (refresh = false) => {
     setLoading(true)
     try {
+      // WEB Bridge fetch
       const url = refresh ? '/api/models?refresh=1' : '/api/models'
       const res = await fetch(url)
       const data = await res.json()

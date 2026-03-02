@@ -11,6 +11,14 @@ export default function PreviewDeployPage() {
   const [deployStatus, setDeployStatus] = useState(null) // null | 'running' | 'success' | 'warning' | 'error'
   const [showLogs, setShowLogs] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
+  const [showRemoteForm, setShowRemoteForm] = useState(false)
+  const [remoteConfig, setRemoteConfig] = useState({
+    host: '',
+    port: 22,
+    username: 'root',
+    password: '',
+    privateKey: ''
+  })
   const logEndRef = useRef(null)
   const eventSourceRef = useRef(null)
 
@@ -68,13 +76,13 @@ export default function PreviewDeployPage() {
     setDeployStatus('running')
 
     try {
+      // --- WEB BRIDGE DEPLOY ---
       const response = await fetch('/api/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           config,
           env: state.config.env || {},
-          soulMd: state.soulMd || '',
           workspaceFiles: state.workspaceFiles || {},
           provider: state.provider || '',
           apiKey: state.apiKey || '',
@@ -85,11 +93,10 @@ export default function PreviewDeployPage() {
       })
 
       const result = await response.json()
-
       if (result.steps) {
         setLogs(prev => [...prev, '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', ...result.steps])
       }
-      
+
       if (result.success) {
         setDeployStatus(result.needsManual ? 'warning' : 'success')
         setLogs(prev => [...prev, '', result.needsManual
@@ -97,7 +104,6 @@ export default function PreviewDeployPage() {
           : '🎉 Deployment complete!'
         ])
         
-        // Stream live logs (keep last 50 only)
         if (!result.needsManual) {
           try {
             const es = new EventSource('/api/logs')
@@ -116,9 +122,59 @@ export default function PreviewDeployPage() {
     } catch (e) {
       setLogs(prev => [
         ...prev,
-        `❌ Bridge server unreachable: ${e.message}`,
+        `❌ Deployment failed: ${e.message}`,
         '💡 Make sure npm run dev is running',
       ])
+      setDeployStatus('error')
+    } finally {
+      setDeploying(false)
+    }
+  }
+
+  const handleRemoteDeploy = async () => {
+    if (!remoteConfig.host || !remoteConfig.username) {
+      alert('SSH Host and Username are required.')
+      return
+    }
+
+    setDeploying(true)
+    setShowLogs(true)
+    setShowRemoteForm(false)
+    setLogs([
+      '🚀 Starting Remote SSH Deployment...',
+      `🔗 Connecting to ${remoteConfig.username}@${remoteConfig.host}:${remoteConfig.port}...`,
+    ])
+    setDeployStatus('running')
+
+    try {
+      // --- WEB BRIDGE SSH DEPLOY ---
+      const response = await fetch('/api/deploy-remote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sshConfig: remoteConfig,
+          config,
+          env: state.config.env || {},
+          workspaceFiles: state.workspaceFiles || {},
+          provider: state.provider || '',
+          apiKey: state.apiKey || '',
+        })
+      })
+
+      const result = await response.json()
+      if (result.steps) {
+        setLogs(prev => [...prev, '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', ...result.steps])
+      }
+
+      if (result.success) {
+        setDeployStatus('success')
+        setLogs(prev => [...prev, '', '🎉 Remote deployment complete! Gateway is running on VPS.'])
+      } else {
+        setLogs(prev => [...prev, `❌ Error: ${result.error || 'Failed to deploy remotely'}`])
+        setDeployStatus('error')
+      }
+    } catch (e) {
+      setLogs(prev => [...prev, `❌ Connection error: ${e.message}`])
       setDeployStatus('error')
     } finally {
       setDeploying(false)
@@ -258,6 +314,28 @@ export default function PreviewDeployPage() {
             </button>
           </div>
 
+          <div className="glass-card" style={{ 
+            padding: 'var(--space-xl)', 
+            textAlign: 'center',
+            border: '1px solid var(--text-accent)',
+            background: 'rgba(255, 107, 53, 0.05)',
+            boxShadow: '0 8px 32px rgba(255, 107, 53, 0.1)'
+          }}>
+            <span style={{ fontSize: '32px', marginBottom: 'var(--space-md)', display: 'block' }}>🛰️</span>
+            <h4 style={{ fontWeight: 800, color: 'var(--text-accent)', marginBottom: 'var(--space-sm)' }}>Cloud / VPS Deployment</h4>
+            <p className="field-hint" style={{ marginBottom: 'var(--space-lg)' }}>
+              Setup and run OpenClaw on a remote Linux server via SSH. Total automation.
+            </p>
+            <button 
+              className="btn btn-accent btn-lg" 
+              onClick={() => setShowRemoteForm(!showRemoteForm)} 
+              style={{ width: '100%', fontWeight: 800 }}
+              disabled={deploying}
+            >
+              {showRemoteForm ? 'Close Setup' : 'Remote SSH Setup 🛰️'}
+            </button>
+          </div>
+
           <div className="glass-card" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
             <span style={{ fontSize: '32px', marginBottom: 'var(--space-md)', display: 'block' }}>📋</span>
             <h4 style={{ fontWeight: 700, marginBottom: 'var(--space-sm)' }}>Manual Instructions</h4>
@@ -269,6 +347,90 @@ export default function PreviewDeployPage() {
             </button>
           </div>
         </div>
+
+        {/* ──── SSH Configuration Form ──── */}
+        {showRemoteForm && (
+          <div className="glass-card animate-in" style={{ 
+            marginTop: 'var(--space-lg)', 
+            padding: 'var(--space-xl)',
+            border: '2px solid var(--text-accent)',
+            background: 'var(--bg-secondary)',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-xl)' }}>
+              <h4 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-accent)', display: 'flex', alignItems: 'center', gap: '12px', margin: 0 }}>
+                🛰️ Remote Host Settings
+              </h4>
+              <span className="badge badge-accent">ROOT ACCESS RECOMMENDED</span>
+            </div>
+            
+            <div className="card-grid card-grid-2" style={{ gap: 'var(--space-lg)' }}>
+              <div className="form-group">
+                <label className="field-label" style={{ color: 'var(--text-secondary)' }}>Host IP Address</label>
+                <input 
+                  type="text" 
+                  className="field-input mono" 
+                  placeholder="123.123.123.123"
+                  value={remoteConfig.host}
+                  onChange={e => setRemoteConfig({...remoteConfig, host: e.target.value})}
+                  style={{ background: 'var(--bg-primary)' }}
+                />
+              </div>
+              <div className="form-group">
+                <label className="field-label" style={{ color: 'var(--text-secondary)' }}>SSH Port</label>
+                <input 
+                  type="number" 
+                  className="field-input mono" 
+                  placeholder="22"
+                  value={remoteConfig.port}
+                  onChange={e => setRemoteConfig({...remoteConfig, port: parseInt(e.target.value)})}
+                  style={{ background: 'var(--bg-primary)' }}
+                />
+              </div>
+              <div className="form-group">
+                <label className="field-label" style={{ color: 'var(--text-secondary)' }}>Login Username</label>
+                <input 
+                  type="text" 
+                  className="field-input mono" 
+                  placeholder="root"
+                  value={remoteConfig.username}
+                  onChange={e => setRemoteConfig({...remoteConfig, username: e.target.value})}
+                  style={{ background: 'var(--bg-primary)' }}
+                />
+              </div>
+              <div className="form-group">
+                <label className="field-label" style={{ color: 'var(--text-secondary)' }}>Password / Auth Key</label>
+                <input 
+                  type="password" 
+                  className="field-input mono" 
+                  placeholder="••••••••"
+                  value={remoteConfig.password}
+                  onChange={e => setRemoteConfig({...remoteConfig, password: e.target.value})}
+                  style={{ background: 'var(--bg-primary)' }}
+                />
+              </div>
+            </div>
+            
+            <div style={{ marginTop: 'var(--space-xl)', display: 'flex', gap: 'var(--space-md)' }}>
+              <button 
+                className="btn btn-primary btn-lg" 
+                onClick={handleRemoteDeploy} 
+                style={{ flex: 2, fontSize: '16px', height: '56px' }}
+                disabled={deploying}
+              >
+                {deploying ? '⏳ Deploying...' : '🚀 Execute Remote Deployment'}
+              </button>
+              <button className="btn btn-ghost btn-lg" onClick={() => setShowRemoteForm(false)} style={{ flex: 1 }}>
+                Cancel
+              </button>
+            </div>
+            <div style={{ marginTop: 'var(--space-lg)', padding: 'var(--space-md)', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)' }}>
+              <p className="field-hint" style={{ margin: 0, fontSize: '12px' }}>
+                💡 <strong>What happens next?</strong> ClawWizard will connect to your server, install Node.js (if missing), fetch OpenClaw Core, apply your configurations, and start the gateway service as a background process.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ──── Manual Steps ──── */}

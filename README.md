@@ -15,7 +15,9 @@
 - **🔐 Pairing Workflow**: Guided DM pairing flow for secure private messaging (via `openclaw pairing approve`).
 - **🎭 Workspace Templates**: 15+ pre-built persona and config templates for every OpenClaw system file (`AGENTS.md`, `SOUL.md`, `IDENTITY`, `BOOT.md`, `BOOTSTRAP.md`, `HEARTBEAT.md`, `TOOLS.md`, `USER`). Includes AI-agent styles, funny troll personas, and professional presets.
 - **🛠️ Tools & Skills**: Select and configure tool groups for your AI agent.
-- **🚀 Live Deployment**: One-click deployment that writes config files directly to `~/.openclaw/`, starts the gateway, and **auto-opens the OpenClaw Dashboard & TUI** in your browser and terminal.
+- **🚀 One-Click Deploy**: Deploy locally or to a **Remote VPS via SSH**. Writes config files, starts the gateway, and auto-opens the OpenClaw Dashboard.
+- **☁️ Remote Cloud Support**: Integrated SSH deployment handler. Provision your agent on any Linux server directly from the wizard.
+- **🖥️ Native Desktop App**: Runs as a lightweight native application on Windows and macOS via **Tauri**.
 - **🛰️ Log Streaming**: Watch your AI assistant come to life with real-time log streaming in a web-based terminal.
 - **💎 Premium Design**: Dark-mode glassmorphism interface with fluid animations and micro-interactions.
 
@@ -78,11 +80,12 @@ flowchart TD
     subgraph STEP7["Step 7 · Preview & Deploy"]
         H[Review openclaw.json config]
         H --> I{Deploy mode?}
-        I -- Live Deploy --> J[🚀 Write config to ~/.openclaw/\nStart Gateway\nHealth check]
-        I -- Manual --> K[📋 Copy CLI commands\nor download openclaw.json]
+        I -- Local Deploy --> J[🚀 Write to ~/.openclaw/\nStart Gateway]
+        I -- Remote Deploy --> JR[☁️ Connect via SSH\nSetup & Run on VPS]
+        I -- Manual --> K[📋 Copy CLI commands]
     end
 
-    J --> L[✅ Gateway Online!\nOpens Dashboard 🌐\nOpens TUI 💻]
+    J & JR --> L[✅ Gateway Online!\nOpens Dashboard 🌐\nOpens TUI 💻]
     K --> M[⚙️ Run: openclaw onboard\nThen: openclaw pairing approve]
 
     style A fill:#ff6b35,color:#fff,stroke:none
@@ -172,11 +175,20 @@ You need the "engine" to run this app. You have two choices:
 
    *This command runs both the Vite frontend and the Node.js bridge server concurrently.*
 
+4. **Run as Desktop App (Native):**
+
+   ```bash
+   # Make sure you have Rust installed
+   npm install
+   npx tauri dev
+   ```
+
 ### 🐳 Docker Deployment (Optional)
 
 If you prefer to run ClawWizard in a container:
 
 1. **Build and Start**:
+
    ```bash
    docker-compose up -d
    ```
@@ -189,8 +201,7 @@ If you prefer to run ClawWizard in a container:
 
 ---
 
-4. Open [http://localhost:5173](http://localhost:5173) in your browser.
-
+1. Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 

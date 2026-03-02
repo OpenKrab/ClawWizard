@@ -1,5 +1,87 @@
+import { useState, useEffect } from 'react'
 import { useWizard } from '../context/WizardContext'
 import { USE_CASES, TEMPLATES } from '../data/templates'
+
+function SystemStatus() {
+  const [status, setStatus] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [installing, setInstalling] = useState(false)
+
+  const checkStatus = async () => {
+    try {
+      const res = await fetch('/api/check-system')
+      const data = await res.json()
+      setStatus(data)
+    } catch (e) {
+      console.error('Check failed', e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    checkStatus()
+  }, [])
+
+  const handleAutoInstall = async () => {
+    setInstalling(true)
+    try {
+      const res = await fetch('/api/install-openclaw', { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        checkStatus()
+      } else {
+        alert('Install failed. Please try manual installation.')
+      }
+    } catch (e) {
+      alert('Error during install')
+    } finally {
+      setInstalling(false)
+    }
+  }
+
+  if (loading) return null
+
+  const isReady = status?.openclaw?.installed
+
+  return (
+    <div className="animate-in" style={{
+      padding: 'var(--space-md) var(--space-lg)',
+      background: isReady ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)',
+      border: `1px solid ${isReady ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
+      borderRadius: 'var(--radius-lg)',
+      marginBottom: 'var(--space-xl)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 'var(--space-md)'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+        <span style={{ fontSize: '24px' }}>{isReady ? '✅' : '⚠️'}</span>
+        <div>
+          <h4 style={{ fontSize: '14px', fontWeight: 800, color: isReady ? 'var(--status-success)' : 'var(--status-error)', margin: 0 }}>
+            {isReady ? 'System Engine Ready' : 'OpenClaw CLI Missing'}
+          </h4>
+          <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
+            Node: {status?.node?.version} | OpenClaw: {status?.openclaw?.version || 'Not Found'}
+          </p>
+        </div>
+      </div>
+      {!isReady && (
+        <button 
+          className="btn btn-sm btn-accent" 
+          onClick={handleAutoInstall}
+          disabled={installing}
+        >
+          {installing ? '⏳ Installing...' : 'Auto-Install CLI ✨'}
+        </button>
+      )}
+      {isReady && (
+        <span className="badge badge-success" style={{ fontSize: '10px' }}>UP TO DATE</span>
+      )}
+    </div>
+  )
+}
 
 export default function WelcomePage() {
   const { state, dispatch, nextStep } = useWizard()
@@ -14,6 +96,7 @@ export default function WelcomePage() {
 
   return (
     <div className="animate-in">
+      <SystemStatus />
       <div className="page-header">
         <h1 className="page-title">
           Welcome to <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ClawWizard</span> 🦞

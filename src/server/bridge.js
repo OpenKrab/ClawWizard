@@ -3,6 +3,7 @@ import { spawn, exec, execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { Client } from "ssh2";
 
 const PORT = 18790; // Bridge port (OpenClaw gateway default is 18789)
 const OPENCLAW_DIR = path.join(os.homedir(), ".openclaw");
@@ -562,10 +563,134 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: stderr || "Failed" }));
       }
     });
+    // ─── POST /api/deploy-remote ──────────────────────────────────
+  } else if (req.url === "/api/deploy-remote" && req.method === "POST") {
+    try {
+      const {
+        sshConfig, // { host, port, username, password, privateKey }
+        config,
+        env,
+        workspaceFiles,
+        provider,
+        apiKey,
+      } = await parseBody(req);
+
+      const steps = [];
+      const conn = new Client();
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+
+      conn
+        .on("ready", () => {
+          steps.push("✅ SSH Connection established");
+
+          const runRemote = (cmd) => {
+            return new Promise((resolve, reject) => {
+              conn.exec(cmd, (err, stream) => {
+                if (err) return reject(err);
+                let out = "";
+                stream
+                  .on("close", (code) => resolve({ code, out }))
+                  .on("data", (data) => (out += data))
+                  .stderr.on("data", (data) => (out += data));
+              });
+            });
+          };
+
+          (async () => {
+            try {
+              // 1. Check/Install OpenClaw
+              steps.push("🔍 Checking for OpenClaw CLI on remote...");
+              const vCheck = await runRemote("openclaw --version");
+              if (vCheck.code !== 0) {
+                steps.push("📦 Installing OpenClaw CLI on remote...");
+                await runRemote("npm install -g openclaw@latest");
+              }
+
+              // 2. Prepare directories
+              await runRemote("mkdir -p ~/.openclaw/workspace");
+
+              // 3. Write Config Files
+              // (Using base64 to avoid escaping issues with special characters in config)
+              const configB64 = Buffer.from(JSON.stringify(config)).toString(
+                "base64",
+              );
+              await runRemote(
+                `echo "${configB64}" | base64 -d > ~/.openclaw/openclaw.json`,
+              );
+              steps.push("✅ Uploaded openclaw.json");
+
+              // .env
+              let envContent = "";
+              const providerSlug = (provider || "").toLowerCase();
+              const envKeyName = ENV_KEY_MAP[providerSlug];
+              if (envKeyName && apiKey)
+                envContent += `${envKeyName}=${apiKey}\n`;
+              for (const [k, v] of Object.entries(env || {}))
+                if (v) envContent += `${k}=${v}\n`;
+
+              const envB64 = Buffer.from(envContent).toString("base64");
+              await runRemote(
+                `echo "${envB64}" | base64 -d > ~/.openclaw/.env`,
+              );
+              steps.push("✅ Uploaded .env");
+
+              // Workspace files
+              if (workspaceFiles) {
+                for (const [name, content] of Object.entries(workspaceFiles)) {
+                  const b64 = Buffer.from(content).toString("base64");
+                  await runRemote(
+                    `echo "${b64}" | base64 -d > ~/.openclaw/workspace/${name}`,
+                  );
+                  steps.push(`✅ Uploaded ${name}`);
+                }
+              }
+
+              // 4. Onboard
+              steps.push("🚀 Bootstrapping OpenClaw on remote...");
+              const onboardCmd = `openclaw onboard --non-interactive --accept-risk --mode local --gateway-port ${config.gateway?.port || 18789}`;
+              const onboardResult = await runRemote(onboardCmd);
+              steps.push(onboardResult.out);
+
+              // 5. Start
+              steps.push("🔧 Starting Gateway on remote...");
+              await runRemote("openclaw gateway start");
+
+              const health = await runRemote("openclaw gateway health --json");
+              if (health.code === 0) {
+                steps.push("🎉 Remote deployment successful! Agent is LIVE.");
+              } else {
+                steps.push(
+                  "⚠️ Gateway started but health check failed. Please check remote logs.",
+                );
+              }
+
+              res.end(JSON.stringify({ success: true, steps }));
+              conn.end();
+            } catch (err) {
+              steps.push(`❌ Remote Error: ${err.message}`);
+              res.end(
+                JSON.stringify({ success: false, steps, error: err.message }),
+              );
+              conn.end();
+            }
+          })();
+        })
+        .on("error", (err) => {
+          res.end(
+            JSON.stringify({
+              success: false,
+              error: `SSH Connect Error: ${err.message}`,
+            }),
+          );
+        })
+        .connect(sshConfig);
+    } catch (e) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+
     // ─── GET /api/models ──────────────────────────────────────────
-    // Fetches ALL models once, caches 5 min, groups by provider.
-    // Providers are auto-detected from model IDs (e.g. "opencode/xxx" → provider="opencode")
-  } else if (req.url?.startsWith("/api/models") && req.method === "GET") {
     const url = new URL(req.url, `http://localhost:${PORT}`);
     const forceRefresh = url.searchParams.get("refresh") === "1";
     const now = Date.now();
@@ -665,6 +790,48 @@ const server = http.createServer(async (req, res) => {
         });
       },
     );
+    // ─── GET /api/check-system ────────────────────────────────────
+  } else if (req.url === "/api/check-system" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    const result = {
+      node: {
+        installed: true,
+        version: process.version,
+      },
+      openclaw: {
+        installed: isOpenclawInstalled(),
+        version: null,
+      },
+      os: {
+        platform: os.platform(),
+        release: os.release(),
+        arch: os.arch(),
+      },
+    };
+
+    if (result.openclaw.installed) {
+      try {
+        const v = execSync("openclaw -V", { encoding: "utf8" }).trim();
+        result.openclaw.version = v;
+      } catch (e) {
+        result.openclaw.version = "unknown";
+      }
+    }
+
+    res.end(JSON.stringify(result));
+
+    // ─── POST /api/install-openclaw ───────────────────────────────
+  } else if (req.url === "/api/install-openclaw" && req.method === "POST") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    exec("npm install -g openclaw@latest", (err, stdout, stderr) => {
+      res.end(
+        JSON.stringify({
+          success: !err,
+          output: stdout || stderr,
+        }),
+      );
+    });
+
     // ─── 404 ──────────────────────────────────────────────────────
   } else {
     res.writeHead(404, { "Content-Type": "application/json" });
