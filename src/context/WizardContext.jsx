@@ -3,6 +3,7 @@ import { createContext, useContext, useReducer, useEffect } from 'react'
 const STORAGE_KEY = 'clawwizard_state'
 
 const STEPS = [
+  { id: 'setup', label: 'Setup', icon: '⚙️' },
   { id: 'welcome', label: 'Welcome', icon: '🦞' },
   { id: 'model', label: 'Model & Auth', icon: '🤖' },
   { id: 'workspace', label: 'Workspace', icon: '📁' },

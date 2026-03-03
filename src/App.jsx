@@ -1,5 +1,6 @@
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { useWizard } from './context/WizardContext'
+import SetupPage from './pages/SetupPage'
 import WelcomePage from './pages/WelcomePage'
 import ModelAuthPage from './pages/ModelAuthPage'
 import WorkspacePage from './pages/WorkspacePage'
@@ -11,7 +12,7 @@ import DiagnosticsPage from './pages/DiagnosticsPage'
 import ThemeSwitcher from './components/ThemeSwitcher'
 import { useEffect } from 'react'
 
-const STEP_ROUTES = ['/', '/model', '/workspace', '/gateway', '/channels', '/tools', '/deploy']
+const STEP_ROUTES = ['/', '/welcome', '/model', '/workspace', '/gateway', '/channels', '/tools', '/deploy']
 
 export default function App() {
   const { state, STEPS, goToStep } = useWizard()
@@ -64,7 +65,8 @@ export default function App() {
       {/* Main */}
       <main className="app-main">
         <Routes>
-          <Route path="/" element={<WelcomePage />} />
+          <Route path="/" element={<SetupPage />} />
+          <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/model" element={<ModelAuthPage />} />
           <Route path="/workspace" element={<WorkspacePage />} />
           <Route path="/gateway" element={<GatewayPage />} />
