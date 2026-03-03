@@ -84,6 +84,24 @@ function parseBody(req) {
   });
 }
 
+function checkGatewayHealthWithRetry(
+  { attempts = 8, delayMs = 2500 } = {},
+  callback,
+) {
+  let tries = 0;
+
+  const run = () => {
+    exec("openclaw gateway health --json", { shell: true }, (err, stdout, stderr) => {
+      if (!err) return callback(null, stdout || "");
+      tries += 1;
+      if (tries >= attempts) return callback(err, stdout || stderr || "");
+      setTimeout(run, delayMs);
+    });
+  };
+
+  run();
+}
+
 const server = http.createServer(async (req, res) => {
   // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -321,33 +339,59 @@ const server = http.createServer(async (req, res) => {
                 if (startOut) steps.push(startOut.trim());
               }
 
-              // Health check
-              exec(
-                "openclaw gateway health --json",
-                { shell: true },
-                (hErr, hOut) => {
-                  if (!hErr) {
-                    steps.push("✅ Gateway health check passed!");
-                    steps.push("🖥️ Opening Dashboard and TUI...");
-                    exec("openclaw dashboard", { shell: true });
-                    exec("start cmd /c openclaw tui", { shell: true });
-                  } else {
-                    steps.push(
-                      "⚠️ Gateway not reachable yet — it may still be starting up",
-                    );
-                    steps.push("💡 Run: openclaw doctor");
-                  }
-
+              // Health check with retries; auto-repair once if needed.
+              checkGatewayHealthWithRetry({}, (hErr) => {
+                if (!hErr) {
+                  steps.push("✅ Gateway health check passed!");
+                  steps.push("🖥️ Opening Dashboard and TUI...");
+                  exec("openclaw dashboard", { shell: true });
+                  exec("start cmd /c openclaw tui", { shell: true });
                   res.writeHead(200, { "Content-Type": "application/json" });
-                  res.end(
+                  return res.end(
                     JSON.stringify({
-                      success: true, // Config was written, that's the main goal
+                      success: true,
                       message: steps.join("\n"),
                       steps,
                     }),
                   );
-                },
-              );
+                }
+
+                steps.push("⚠️ Gateway still unreachable after retries.");
+                steps.push("🩺 Running: openclaw doctor --fix");
+                exec("openclaw doctor --fix", { shell: true }, (dErr, dOut, dStderr) => {
+                  if (dOut) steps.push(dOut.trim());
+                  if (dErr && dStderr) steps.push(dStderr.trim());
+
+                  steps.push("🔁 Restarting gateway after doctor fix...");
+                  exec("openclaw gateway restart", { shell: true }, (rErr, rOut, rStderr) => {
+                    if (rOut) steps.push(rOut.trim());
+                    if (rErr && rStderr) steps.push(rStderr.trim());
+
+                    checkGatewayHealthWithRetry({}, (hErr2) => {
+                      if (!hErr2) {
+                        steps.push("✅ Gateway recovered and healthy!");
+                        steps.push("🖥️ Opening Dashboard and TUI...");
+                        exec("openclaw dashboard", { shell: true });
+                        exec("start cmd /c openclaw tui", { shell: true });
+                      } else {
+                        steps.push(
+                          "⚠️ Gateway not reachable yet — check logs with: openclaw logs --follow --plain",
+                        );
+                        steps.push("💡 Run: openclaw doctor");
+                      }
+
+                      res.writeHead(200, { "Content-Type": "application/json" });
+                      res.end(
+                        JSON.stringify({
+                          success: true, // Config was written, that's the main goal
+                          message: steps.join("\n"),
+                          steps,
+                        }),
+                      );
+                    });
+                  });
+                });
+              });
             },
           );
         });
