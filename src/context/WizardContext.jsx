@@ -102,6 +102,7 @@ const initialState = {
   apiKey: '',
   skippedFields: [],
   theme: 'dark', // Add theme state
+  lang: 'en', // Add language state
 }
 
 function loadState() {
@@ -206,6 +207,8 @@ function wizardReducer(state, action) {
       }
     case 'SET_THEME':
       return { ...state, theme: action.payload }
+    case 'SET_LANG':
+      return { ...state, lang: action.payload }
     case 'RESET':
       return { ...initialState }
     default:

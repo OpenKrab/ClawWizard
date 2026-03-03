@@ -1,8 +1,10 @@
 import { useWizard } from '../context/WizardContext'
 import { USE_CASES, TEMPLATES } from '../data/templates'
+import { useTranslation } from '../i18n'
 
 export default function WelcomePage() {
   const { state, dispatch, nextStep } = useWizard()
+  const { t } = useTranslation()
 
   const handleSelect = (useCase) => {
     dispatch({ type: 'SET_USE_CASE', payload: useCase.id })
@@ -16,10 +18,10 @@ export default function WelcomePage() {
     <div className="animate-in">
       <div className="page-header">
         <h1 className="page-title">
-          Welcome to <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ClawWizard</span> 🦞
+          {t('welcome_title')} <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ClawWizard</span> 🦞
         </h1>
         <p className="page-subtitle">
-          Set up your OpenClaw personal AI assistant in minutes. Choose your use case to get started with tailored recommendations.
+          {t('welcome_subtitle')}
         </p>
       </div>
 
@@ -31,13 +33,13 @@ export default function WelcomePage() {
             onClick={() => handleSelect(uc)}
           >
             <span className="usecase-icon">{uc.icon}</span>
-            <h3 className="usecase-title">{uc.title}</h3>
-            <p className="usecase-desc">{uc.desc}</p>
+            <h3 className="usecase-title">{t(`uc_${uc.id}_title`) || uc.title}</h3>
+            <p className="usecase-desc">{t(`uc_${uc.id}_desc`) || uc.desc}</p>
             <div className="usecase-meta">
               <span className={`badge ${uc.difficulty === 'beginner' ? 'badge-success' : uc.difficulty === 'intermediate' ? 'badge-warning' : uc.difficulty === 'advanced' ? 'badge-error' : 'badge-default'}`}>
                 {uc.difficulty}
               </span>
-              <span className="badge badge-default">Cost: {uc.cost}</span>
+              <span className="badge badge-default">{t('cost')} {t(`cost_${uc.cost.toLowerCase()}`) || uc.cost}</span>
             </div>
           </div>
         ))}
@@ -46,10 +48,10 @@ export default function WelcomePage() {
       {state.selectedUseCase && (
         <div className="animate-in" style={{ marginBottom: 'var(--space-xl)' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: 'var(--space-md)' }}>
-            📦 Recommended Templates
+            {t('recommended_templates')}
           </h2>
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--space-lg)' }}>
-            One-click presets for your use case. You can customize everything in the next steps.
+            {t('one_click_presets')}
           </p>
 
           <div className="card-grid card-grid-2">
@@ -87,7 +89,7 @@ export default function WelcomePage() {
       <div className="nav-footer">
         <div />
         <button className="btn btn-primary btn-lg" onClick={handleContinue} disabled={!state.selectedUseCase}>
-          Continue →
+          {t('btn_continue')}
         </button>
       </div>
     </div>
