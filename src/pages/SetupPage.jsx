@@ -5,6 +5,7 @@ export default function SetupPage() {
   const { nextStep } = useWizard()
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [installing, setInstalling] = useState(false)
 
   const checkStatus = async () => {
     try {
@@ -15,6 +16,23 @@ export default function SetupPage() {
       console.error('Check failed', e)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAutoInstall = async () => {
+    setInstalling(true)
+    try {
+      const res = await fetch('/api/install-openclaw', { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        checkStatus()
+      } else {
+        alert('Install failed. Please try manual installation.\n' + (data.output || ''))
+      }
+    } catch (e) {
+      alert('Error during install: ' + e.message)
+    } finally {
+      setInstalling(false)
     }
   }
 
@@ -54,8 +72,16 @@ export default function SetupPage() {
 
             {!isReady && (
               <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'center' }}>
-                <button className="btn btn-accent" onClick={checkStatus}>
-                  🔄 Recheck Status
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleAutoInstall}
+                  disabled={installing}
+                  style={{ fontSize: '16px', padding: '12px 24px' }}
+                >
+                  {installing ? '⏳ Installing... Please wait' : '✨ Install OpenClaw Automatically'}
+                </button>
+                <button className="btn btn-ghost" onClick={checkStatus} disabled={installing}>
+                  🔄 Recheck
                 </button>
               </div>
             )}
@@ -65,9 +91,9 @@ export default function SetupPage() {
 
       {!isReady && !loading && (
         <div className="form-section">
-          <h3 className="form-section-title">📦 Quick Install Guide</h3>
+          <h3 className="form-section-title">📦 Manual Install Guide (Fallback)</h3>
           <p className="field-hint" style={{ marginBottom: 'var(--space-lg)' }}>
-            Run the official installer to set up the OpenClaw engine on your machine.
+            If the automatic installation fails, try running one of these commands on your terminal.
           </p>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
