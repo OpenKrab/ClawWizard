@@ -9,6 +9,7 @@
 ## ✨ Features
 
 - **🎯 Interactive Onboarding**: Step-by-step wizard guidance for beginners and power users alike.
+- **✅ Environment Setup**: Built-in verification and quick-install scripts to ensure the OpenClaw engine is ready before you start.
 - **🤖 Provider & Model Picker**: Support for 20+ LLM providers including Anthropic, OpenAI, Kilocode, Ollama, OpenRouter, Groq, Gemini, DeepSeek, Mistral, and more.
 - **💬 Channel Management**: Easy configuration for **20+ platforms** — WhatsApp, Telegram, Discord, Slack, Signal, iMessage, BlueBubbles, LINE, Matrix, Nextcloud Talk, Microsoft Teams, Feishu, Mattermost, Google Chat, Tlon, Nostr, IRC, Twitch, Zalo, Synology Chat.
 - **👥 Group Chat Support**: Per-group access control with `groupPolicy` (allowlist/blocklist/public) and per-group `requireMention` settings.
@@ -27,7 +28,13 @@
 
 ```mermaid
 flowchart TD
-    A([🦞 Start ClawWizard]) --> B
+    A([🦞 Start ClawWizard]) --> ZA
+
+    subgraph STEP0["Step 0 · Setup"]
+        ZA[Check OpenClaw Engine\nVerify Installation / Quick Install]
+    end
+
+    ZA --> B
 
     subgraph STEP1["Step 1 · Welcome"]
         B[Choose Use Case\nPersonal / Coding / Research\nAutomation / Trading / Custom]
@@ -90,6 +97,7 @@ flowchart TD
 
     style A fill:#ff6b35,color:#fff,stroke:none
     style L fill:#22c55e,color:#fff,stroke:none
+    style STEP0 fill:#1a1a2e,stroke:#ff6b35,color:#fff
     style STEP1 fill:#1a1a2e,stroke:#ff6b35,color:#fff
     style STEP2 fill:#1a1a2e,stroke:#ff6b35,color:#fff
     style STEP3 fill:#1a1a2e,stroke:#ff6b35,color:#fff
