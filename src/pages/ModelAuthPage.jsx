@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useWizard } from '../context/WizardContext'
 import { MODEL_PROVIDERS } from '../data/templates'
 
@@ -10,6 +10,15 @@ export default function ModelAuthPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterFree, setFilterFree] = useState(false)
+
+  // OAuth interactive auth state
+  const [authRunning, setAuthRunning] = useState(false)
+  const [authLogs, setAuthLogs] = useState([])
+  const [authDone, setAuthDone] = useState(false)
+  const [authError, setAuthError] = useState(false)
+  const [authUrl, setAuthUrl] = useState('')
+  const authLogRef = useRef(null)
+  const eventSourceRef = useRef(null)
 
   // Fetch ALL models once on mount
   useEffect(() => {
@@ -55,6 +64,8 @@ export default function ModelAuthPage() {
         consoleUrl: tpl?.consoleUrl || '',
         keyPattern: tpl?.keyPattern || null,
         envKey: tpl?.envKey || '',
+        authOptions: tpl?.authOptions || [],
+        authChoice: tpl?.authChoice || '',
       })
     }
 
@@ -71,6 +82,8 @@ export default function ModelAuthPage() {
           consoleUrl: tpl.consoleUrl || '',
           keyPattern: tpl.keyPattern || null,
           envKey: tpl.envKey || '',
+          authOptions: tpl.authOptions || [],
+          authChoice: tpl.authChoice || '',
         })
       }
     }
@@ -78,9 +91,83 @@ export default function ModelAuthPage() {
   }, [dynamicProviders])
 
   const currentProviderInfo = providerList.find(p => p.id === state.provider) || providerList[0]
-  const needsApiKey = state.provider !== 'ollama'
-  const keyValid = !needsApiKey || !currentProviderInfo?.keyPattern || currentProviderInfo.keyPattern.test(state.apiKey) || state.skippedFields.includes('apiKey')
+  const currentAuthOption = currentProviderInfo?.authOptions?.find(o => o.id === (state.authChoice || currentProviderInfo?.authChoice)) || currentProviderInfo?.authOptions?.[0]
+
+  const needsApiKey = state.provider !== 'ollama' && (!currentAuthOption || !currentAuthOption.isSubscription || currentAuthOption.isToken)
+  const isSubscription = currentAuthOption?.isSubscription
+  const isOAuth = currentAuthOption?.isOAuth
+  const keyValid = !needsApiKey || !!state.apiKey || state.skippedFields.includes('apiKey')
   const modelSet = !!state.config.agents.defaults.model.primary
+
+  // OAuth auth handlers
+  const handleStartAuth = async () => {
+    const choice = state.authChoice || currentProviderInfo?.authChoice
+    if (!choice) return
+
+    setAuthRunning(true)
+    setAuthLogs([])
+    setAuthDone(false)
+    setAuthError(false)
+    setAuthUrl('')
+
+    try {
+      const res = await fetch('/api/auth-start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authChoice: choice }),
+      })
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try {
+            const data = JSON.parse(line.slice(6))
+            if (data.type === 'url') {
+              setAuthUrl(data.url)
+            } else if (data.type === 'done') {
+              setAuthDone(data.success)
+              setAuthError(!data.success)
+              setAuthRunning(false)
+            } else if (data.type === 'error') {
+              setAuthError(true)
+              setAuthRunning(false)
+            }
+            if (data.msg) {
+              setAuthLogs(prev => [...prev.slice(-100), data.msg])
+            }
+          } catch {}
+        }
+      }
+    } catch (err) {
+      setAuthLogs(prev => [...prev, `❌ Connection error: ${err.message}`])
+      setAuthError(true)
+      setAuthRunning(false)
+    }
+  }
+
+  const handleCancelAuth = async () => {
+    try {
+      await fetch('/api/auth-cancel', { method: 'POST' })
+    } catch {}
+    setAuthRunning(false)
+  }
+
+  useEffect(() => {
+    if (authLogRef.current) {
+      authLogRef.current.scrollTop = authLogRef.current.scrollHeight
+    }
+  }, [authLogs])
 
   // Models for selected provider
   const providerModels = useMemo(() => {
@@ -118,7 +205,7 @@ export default function ModelAuthPage() {
     dispatch({ type: 'UPDATE_CONFIG', payload: { agents: { defaults: { model: { primary: modelId } } } } })
   }
 
-  const canContinue = modelSet && (keyValid || state.skippedFields.includes('apiKey'))
+  const canContinue = modelSet && (keyValid || isOAuth || (isSubscription && !currentAuthOption?.isToken) || state.skippedFields.includes('apiKey'))
 
   return (
     <div className="animate-in">
@@ -132,29 +219,36 @@ export default function ModelAuthPage() {
 
       {/* Provider Selection */}
       <div className="form-section">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
           <h3 className="form-section-title" style={{ marginBottom: 0 }}>🏢 Provider</h3>
           <button className="btn btn-ghost btn-sm" onClick={() => fetchAllModels(true)} disabled={loading}>
-            {loading ? '⏳' : '🔄'} Refresh
+            {loading ? <span className="animate-pulse">🔄</span> : '🔄'} Refresh
           </button>
         </div>
         <div className="card-grid card-grid-3">
-          {providerList.map((provider) => (
-            <div
-              key={provider.id}
-              className={`glass-card clickable ${state.provider === provider.id ? 'selected' : ''}`}
-              onClick={() => handleProviderChange(provider.id)}
-              style={{ padding: 'var(--space-sm) var(--space-md)', textAlign: 'center', position: 'relative' }}
-            >
-              <span style={{ fontSize: '20px' }}>{provider.icon}</span>
-              <h4 style={{ fontSize: '12px', fontWeight: 700, marginTop: '4px' }}>{provider.name}</h4>
-              {provider.count > 0 && (
-                <span style={{ fontSize: '10px', color: provider.authed > 0 ? 'var(--status-success)' : 'var(--text-tertiary)' }}>
-                  {provider.count} models {provider.authed > 0 && `(${provider.authed} ✓)`}
-                </span>
-              )}
-            </div>
-          ))}
+          {loading && dynamicProviders.length === 0 ? (
+            // Skeleton Loading for Providers
+            [1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="glass-card skeleton" style={{ height: '80px' }} />
+            ))
+          ) : (
+            providerList.map((provider) => (
+              <div
+                key={provider.id}
+                className={`glass-card clickable animate-scale ${state.provider === provider.id ? 'selected' : ''}`}
+                onClick={() => handleProviderChange(provider.id)}
+                style={{ padding: 'var(--space-md)', textAlign: 'center', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}
+              >
+                <span style={{ fontSize: '24px' }}>{provider.icon}</span>
+                <h4 style={{ fontSize: '13px', fontWeight: 700 }}>{provider.name}</h4>
+                {provider.count > 0 && (
+                  <span style={{ fontSize: '10px', color: provider.authed > 0 ? 'var(--status-success)' : 'var(--text-tertiary)', fontWeight: 600 }}>
+                    {provider.count} models {provider.authed > 0 && `(${provider.authed} ✓)`}
+                  </span>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -163,64 +257,87 @@ export default function ModelAuthPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
           <h3 className="form-section-title" style={{ marginBottom: 0 }}>
             🤖 Model
-            {loading && <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginLeft: '8px' }}>⏳</span>}
           </h3>
-          {freeCount > 0 && (
-            <button className={`btn btn-sm ${filterFree ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilterFree(!filterFree)}>
-              🆓 Free ({freeCount})
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+            {freeCount > 0 && (
+              <button className={`btn btn-sm ${filterFree ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilterFree(!filterFree)}>
+                🆓 Free ({freeCount})
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Search */}
-        {providerModels.length > 5 && (
-          <input
-            className="field-input"
-            type="text"
-            placeholder="🔍 Search models..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ marginBottom: 'var(--space-sm)', fontSize: '13px' }}
-          />
+        {(providerModels.length > 5 || loading) && (
+          <div style={{ position: 'relative', marginBottom: 'var(--space-md)' }}>
+            <input
+              className={`field-input ${loading ? 'skeleton' : ''}`}
+              type="text"
+              placeholder="🔍 Search models..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ paddingLeft: '36px' }}
+            />
+          </div>
         )}
 
         {/* Model List */}
-        {providerModels.length > 0 ? (
-          <div style={{ maxHeight: '280px', overflowY: 'auto', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' }}>
+        {loading && allModels.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="skeleton" style={{ height: '40px', borderRadius: 'var(--radius-md)' }} />
+            ))}
+          </div>
+        ) : providerModels.length > 0 ? (
+          <div style={{ 
+            maxHeight: '320px', 
+            overflowY: 'auto', 
+            borderRadius: 'var(--radius-lg)', 
+            border: '1px solid var(--glass-border)',
+            background: 'var(--glass-bg)',
+            boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.2)'
+          }}>
             {providerModels.map(m => (
               <div
                 key={m.id}
                 onClick={() => handleModelSelect(m.id)}
+                className={`animate-in`}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                  padding: '8px 12px', cursor: 'pointer',
-                  background: state.config.agents.defaults.model.primary === m.id ? 'rgba(255,107,53,0.12)' : 'transparent',
+                  display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
+                  padding: '12px 16px', cursor: 'pointer',
+                  background: state.config.agents.defaults.model.primary === m.id ? 'rgba(255,107,53,0.15)' : 'transparent',
                   borderBottom: '1px solid var(--glass-border)',
-                  opacity: m.auth ? 1 : 0.5,
-                  transition: 'background 0.15s',
+                  opacity: m.auth ? 1 : 0.6,
+                  transition: 'all 0.2s',
+                  borderLeft: state.config.agents.defaults.model.primary === m.id ? '4px solid var(--accent-start)' : '4px solid transparent'
                 }}
-                onMouseEnter={(e) => { if (state.config.agents.defaults.model.primary !== m.id) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-                onMouseLeave={(e) => { if (state.config.agents.defaults.model.primary !== m.id) e.currentTarget.style.background = 'transparent' }}
               >
-                <span style={{
-                  width: '12px', height: '12px', borderRadius: '50%', flexShrink: 0,
+                <div style={{
+                  width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0,
+                  background: state.config.agents.defaults.model.primary === m.id ? 'var(--accent-start)' : 'transparent',
                   border: state.config.agents.defaults.model.primary === m.id ? 'none' : '2px solid var(--glass-border)',
-                  background: state.config.agents.defaults.model.primary === m.id ? 'var(--accent-primary)' : 'transparent',
                 }} />
-                <span style={{ flex: 1, fontSize: '13px', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: state.config.agents.defaults.model.primary === m.id ? 'var(--text-accent)' : 'var(--text-primary)' }}>
+                <span style={{ 
+                  flex: 1, 
+                  fontSize: '13px', 
+                  fontFamily: 'var(--font-mono)', 
+                  fontWeight: state.config.agents.defaults.model.primary === m.id ? 600 : 400,
+                  color: state.config.agents.defaults.model.primary === m.id ? 'var(--text-primary)' : 'var(--text-secondary)' 
+                }}>
                   {m.id}
                 </span>
-                <div style={{ display: 'flex', gap: '3px', flexShrink: 0 }}>
-                  {m.free && <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '3px', background: 'rgba(34,197,94,0.15)', color: '#4ade80', fontWeight: 700 }}>FREE</span>}
-                  {m.input?.includes('image') && <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '3px', background: 'rgba(99,102,241,0.15)', color: '#818cf8' }}>🖼️</span>}
-                  <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '3px', background: 'var(--glass-bg)', color: 'var(--text-tertiary)' }}>{m.context}</span>
+                <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                  {m.free && <span className="badge badge-success" style={{ fontSize: '9px' }}>FREE</span>}
+                  {m.input?.includes('image') && <span title="Vision Support">🖼️</span>}
+                  <span className="badge badge-default" style={{ fontSize: '9px' }}>{m.context}</span>
                 </div>
               </div>
             ))}
           </div>
         ) : !loading ? (
-          <div style={{ padding: 'var(--space-lg)', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '13px' }}>
-            No models found. Try selecting a different provider or use custom input below.
+          <div className="glass-card" style={{ padding: 'var(--space-2xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+            <div style={{ fontSize: '32px', marginBottom: 'var(--space-md)' }}>🔍</div>
+            <p>No models found for this provider.</p>
           </div>
         ) : null}
 
@@ -240,15 +357,150 @@ export default function ModelAuthPage() {
         </div>
       </div>
 
+      {/* Auth Method Selection */}
+      {currentProviderInfo?.authOptions?.length > 1 && (
+        <div className="form-section">
+          <h3 className="form-section-title">🔑 Authentication Method</h3>
+          <div className="card-grid card-grid-2">
+            {currentProviderInfo.authOptions.map(opt => {
+              const isActive = state.authChoice === opt.id || (!state.authChoice && opt.id === currentProviderInfo.authChoice);
+              return (
+                <div 
+                  key={opt.id}
+                  className={`glass-card clickable animate-scale ${isActive ? 'selected' : ''}`}
+                  onClick={() => dispatch({ type: 'SET_AUTH_CHOICE', payload: opt.id })}
+                  style={{ padding: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}
+                >
+                  <div style={{ fontSize: '24px' }}>{opt.icon || '🔑'}</div>
+                  <div>
+                    <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '2px' }}>{opt.name}</h4>
+                    <p style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{opt.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* OAuth Interactive Authentication */}
+      {isOAuth && (
+        <div className="form-section">
+          <h3 className="form-section-title">🔓 Browser Authentication</h3>
+          {!authRunning && !authDone ? (
+            <div className="waiting-state" style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)', borderColor: 'rgba(59, 130, 246, 0.2)' }}>
+              <div className="waiting-pulse" style={{ color: '#3b82f6' }}>🔐</div>
+              <h3 className="waiting-title">Authentication Required</h3>
+              <p className="waiting-desc">
+                <strong>{currentAuthOption?.name}</strong> requires browser-based login.
+                Click below to start the authentication flow.
+              </p>
+              <button className="btn btn-primary btn-lg" onClick={handleStartAuth} style={{ marginTop: 'var(--space-md)' }}>
+                🚀 Authenticate Now
+              </button>
+              <span className="waiting-skip" onClick={() => dispatch({ type: 'SKIP_FIELD', payload: 'apiKey' })} style={{ marginTop: 'var(--space-md)' }}>
+                I'll do this manually later →
+              </span>
+            </div>
+          ) : authDone && !authError ? (
+            <div className="waiting-state" style={{ backgroundColor: 'rgba(52, 211, 153, 0.05)', borderColor: 'rgba(52, 211, 153, 0.2)' }}>
+              <div className="waiting-pulse" style={{ color: '#34d399' }}>✅</div>
+              <h3 className="waiting-title">Authenticated!</h3>
+              <p className="waiting-desc">
+                <strong>{currentAuthOption?.name}</strong> authentication completed successfully.
+                You're ready to continue.
+              </p>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setAuthDone(false); setAuthLogs([]); }} style={{ marginTop: 'var(--space-sm)' }}>
+                🔄 Re-authenticate
+              </button>
+            </div>
+          ) : (
+            <div>
+              {/* Auth URL banner */}
+              {authUrl && (
+                <div className="glass-card" style={{ 
+                  padding: 'var(--space-md)', marginBottom: 'var(--space-md)',
+                  background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.3)',
+                  display: 'flex', alignItems: 'center', gap: 'var(--space-md)'
+                }}>
+                  <span style={{ fontSize: '24px' }}>🌐</span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>Open this URL to authenticate:</p>
+                    <a href={authUrl} target="_blank" rel="noopener noreferrer" 
+                      style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color: 'var(--text-accent)', wordBreak: 'break-all' }}>
+                      {authUrl} ↗
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Terminal output */}
+              <div ref={authLogRef} style={{
+                background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+                borderRadius: 'var(--radius-md)', padding: 'var(--space-md)',
+                maxHeight: '200px', overflowY: 'auto',
+                fontFamily: 'var(--font-mono)', fontSize: '11px', lineHeight: '1.6',
+                color: '#999', border: '1px solid var(--glass-border)',
+              }}>
+                {authLogs.map((log, i) => (
+                  <div key={i} style={{
+                    color: log.startsWith('✅') ? '#4ade80' :
+                           log.startsWith('❌') ? '#f87171' :
+                           log.startsWith('🚀') || log.startsWith('🔐') ? '#fb923c' :
+                           log.startsWith('⚠') ? '#fbbf24' : '#999',
+                    whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+                  }}>{log}</div>
+                ))}
+                {authRunning && <div className="animate-pulse" style={{ color: '#fb923c' }}>⏳ Waiting for authentication...</div>}
+              </div>
+
+              <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}>
+                {authRunning ? (
+                  <button className="btn btn-ghost btn-sm" onClick={handleCancelAuth}>✖ Cancel</button>
+                ) : (
+                  <>
+                    <button className="btn btn-primary btn-sm" onClick={handleStartAuth}>🔄 Retry</button>
+                    {authError && (
+                      <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: 'SKIP_FIELD', payload: 'apiKey' })}>
+                        Skip for now →
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Subscription / No Key Needed (non-OAuth) */}
+      {!needsApiKey && isSubscription && !isOAuth && (
+        <div className="form-section">
+          <h3 className="form-section-title">🎫 Subscription Active</h3>
+          <div className="waiting-state" style={{ backgroundColor: 'rgba(52, 211, 153, 0.05)', borderColor: 'rgba(52, 211, 153, 0.2)' }}>
+            <div className="waiting-pulse" style={{ color: '#34d399' }}>✅</div>
+            <h3 className="waiting-title">Ready to use Subscription</h3>
+            <p className="waiting-desc">
+              Your selected method <strong>({currentAuthOption?.name})</strong> does not require a manual API key. 
+              The CLI will use your locally authenticated session.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* API Key */}
       {needsApiKey && (
         <div className="form-section">
-          <h3 className="form-section-title">🔑 API Key</h3>
+          <h3 className="form-section-title">
+            {currentAuthOption?.isToken || currentAuthOption?.isSubscription
+              ? '🎫 Subscription / Token' 
+              : '🔑 API Key'}
+          </h3>
           {!state.apiKey && !state.skippedFields.includes('apiKey') ? (
             <div className="waiting-state">
               <div className="waiting-pulse">🔑</div>
-              <h3 className="waiting-title">Waiting for API Key…</h3>
-              <p className="waiting-desc">Get an API key from {currentProviderInfo?.name || state.provider}.</p>
+              <h3 className="waiting-title">Waiting for {currentAuthOption?.isToken ? 'Token' : 'API Key'}…</h3>
+              <p className="waiting-desc">Get credentials from {currentProviderInfo?.name || state.provider}.</p>
               {currentProviderInfo?.consoleUrl && (
                 <a href={currentProviderInfo.consoleUrl} target="_blank" rel="noopener noreferrer" className="waiting-link">
                   Open Console ↗
@@ -256,9 +508,9 @@ export default function ModelAuthPage() {
               )}
               <div style={{ width: '100%', maxWidth: '400px', marginTop: 'var(--space-md)' }}>
                 <input
-                  className={`field-input mono ${state.apiKey ? (keyValid ? 'success' : 'error') : ''}`}
+                  className="field-input mono"
                   type={showKey ? 'text' : 'password'}
-                  placeholder="Paste your API key here…"
+                  placeholder={`Paste your ${currentAuthOption?.isToken ? 'token' : 'API key'} here…`}
                   value={state.apiKey}
                   onChange={(e) => dispatch({ type: 'SET_API_KEY', payload: e.target.value })}
                 />
@@ -269,12 +521,12 @@ export default function ModelAuthPage() {
             </div>
           ) : (
             <div className="field">
-              <label className="field-label">API Key</label>
+              <label className="field-label">{currentAuthOption?.isToken ? 'Token' : 'API Key'}</label>
               <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
                 <input
-                  className={`field-input mono ${state.apiKey ? (keyValid ? 'success' : 'error') : ''}`}
+                  className="field-input mono"
                   type={showKey ? 'text' : 'password'}
-                  placeholder="Paste your API key…"
+                  placeholder={`Paste your ${currentAuthOption?.isToken ? 'token' : 'API key'}…`}
                   value={state.apiKey}
                   onChange={(e) => dispatch({ type: 'SET_API_KEY', payload: e.target.value })}
                   style={{ flex: 1 }}
@@ -283,12 +535,10 @@ export default function ModelAuthPage() {
                   {showKey ? '🙈' : '👁️'}
                 </button>
               </div>
-              {state.apiKey && keyValid && (
-                <span className="field-hint" style={{ color: 'var(--status-success)' }}>✓ API key looks valid</span>
-              )}
+
               {currentProviderInfo?.consoleUrl && (
                 <a href={currentProviderInfo.consoleUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px' }}>
-                  Get API key ↗
+                  Get credentials ↗
                 </a>
               )}
             </div>

@@ -280,6 +280,22 @@ export const MODEL_PROVIDERS = [
     keyPattern: /^sk-ant-/,
     envKey: "ANTHROPIC_API_KEY",
     authChoice: "apiKey",
+    authOptions: [
+      {
+        id: "apiKey",
+        name: "API Key",
+        icon: "🔑",
+        description: "Standard Anthropic API Key",
+      },
+      {
+        id: "token",
+        name: "Setup Token",
+        icon: "🎫",
+        description: "Paste token from 'claude setup-token'",
+        isToken: true,
+        isSubscription: true,
+      },
+    ],
     cliSetup: 'openclaw onboard --anthropic-api-key "$ANTHROPIC_API_KEY"',
     configSnippet: {
       env: { ANTHROPIC_API_KEY: "sk-ant-..." },
@@ -302,6 +318,30 @@ export const MODEL_PROVIDERS = [
     keyPattern: /^sk-/,
     envKey: "OPENAI_API_KEY",
     authChoice: "openai-api-key",
+    authOptions: [
+      {
+        id: "openai-api-key",
+        name: "API Key",
+        icon: "🔑",
+        description: "Standard OpenAI API Key",
+      },
+      {
+        id: "openai-codex",
+        name: "Codex OAuth",
+        icon: "🔓",
+        description: "Login via ChatGPT (browser)",
+        isOAuth: true,
+        isSubscription: true,
+      },
+      {
+        id: "github-copilot",
+        name: "GitHub Copilot",
+        icon: "🐙",
+        description: "GitHub device login",
+        isOAuth: true,
+        isSubscription: true,
+      },
+    ],
     cliSetup:
       'openclaw onboard --auth-choice openai-api-key\n# or: openclaw onboard --openai-api-key "$OPENAI_API_KEY"\n# Codex subscription: openclaw onboard --auth-choice openai-codex',
     configSnippet: {
@@ -322,6 +362,22 @@ export const MODEL_PROVIDERS = [
     keyPattern: /^AIza/,
     envKey: "GEMINI_API_KEY",
     authChoice: "gemini-api-key",
+    authOptions: [
+      {
+        id: "gemini-api-key",
+        name: "API Key",
+        icon: "🔑",
+        description: "Google AI Studio API Key",
+      },
+      {
+        id: "google-gemini-cli",
+        name: "Gemini CLI OAuth",
+        icon: "🔓",
+        description: "Browser login (gcloud auth)",
+        isOAuth: true,
+        isSubscription: true,
+      },
+    ],
     cliSetup:
       'openclaw onboard --auth-choice gemini-api-key\n# or: openclaw onboard --gemini-api-key "$GEMINI_API_KEY"',
     configSnippet: {
@@ -384,6 +440,22 @@ export const MODEL_PROVIDERS = [
     keyPattern: null,
     envKey: "MINIMAX_API_KEY",
     authChoice: "minimax-portal",
+    authOptions: [
+      {
+        id: "minimax-api",
+        name: "API Key",
+        icon: "🔑",
+        description: "Standard MiniMax API Key",
+      },
+      {
+        id: "minimax-portal",
+        name: "Portal OAuth",
+        icon: "🎭",
+        description: "Authenticate via MiniMax Portal",
+        isOAuth: true,
+        isSubscription: true,
+      },
+    ],
     cliSetup:
       "openclaw plugins enable minimax-portal-auth\nopenclaw onboard --auth-choice minimax-portal\n# or API key: openclaw configure → Model/auth → MiniMax M2.1",
     configSnippet: {
@@ -416,6 +488,20 @@ export const MODEL_PROVIDERS = [
     keyPattern: null,
     envKey: "MOONSHOT_API_KEY",
     authChoice: "moonshot-api-key",
+    authOptions: [
+      {
+        id: "moonshot-api-key",
+        name: "Kimi API Key",
+        icon: "🔑",
+        description: "Standard Moonshot API Key",
+      },
+      {
+        id: "kimi-code-api-key",
+        name: "Kimi Coding",
+        icon: "💻",
+        description: "Dedicated Kimi Coding API Key",
+      },
+    ],
     cliSetup:
       "openclaw onboard --auth-choice moonshot-api-key\n# Kimi Coding: openclaw onboard --auth-choice kimi-code-api-key",
     configSnippet: {
@@ -436,6 +522,14 @@ export const MODEL_PROVIDERS = [
     keyPattern: null,
     envKey: "MISTRAL_API_KEY",
     authChoice: "mistral-api-key",
+    authOptions: [
+      {
+        id: "mistral-api-key",
+        name: "Mistral API Key",
+        icon: "🔑",
+        description: "Standard Mistral API Key",
+      },
+    ],
     cliSetup:
       'openclaw onboard --auth-choice mistral-api-key\n# or: openclaw onboard --mistral-api-key "$MISTRAL_API_KEY"',
     configSnippet: {
@@ -454,6 +548,14 @@ export const MODEL_PROVIDERS = [
     keyPattern: null,
     envKey: "XAI_API_KEY",
     authChoice: "xai-api-key",
+    authOptions: [
+      {
+        id: "xai-api-key",
+        name: "xAI API Key",
+        icon: "🔑",
+        description: "Standard xAI API Key",
+      },
+    ],
     cliSetup: "openclaw onboard --auth-choice xai-api-key",
     configSnippet: {
       env: { XAI_API_KEY: "sk-..." },
@@ -469,6 +571,38 @@ export const MODEL_PROVIDERS = [
     keyPattern: null,
     envKey: "ZAI_API_KEY",
     authChoice: "zai-api-key",
+    authOptions: [
+      {
+        id: "zai-api-key",
+        name: "Z.AI GLM-5 Key",
+        icon: "🔑",
+        description: "Standard Z.AI API Key",
+      },
+      {
+        id: "zai-coding-global",
+        name: "Coding (Global)",
+        icon: "🌍",
+        description: "Z.AI Global Coding Endpoint",
+      },
+      {
+        id: "zai-coding-cn",
+        name: "Coding (China)",
+        icon: "🇨🇳",
+        description: "Z.AI China Coding Endpoint",
+      },
+      {
+        id: "zai-global",
+        name: "Z.AI Global",
+        icon: "🌐",
+        description: "Standard Z.AI Global",
+      },
+      {
+        id: "zai-cn",
+        name: "Z.AI China",
+        icon: "🇨🇳",
+        description: "Standard Z.AI China",
+      },
+    ],
     cliSetup:
       'openclaw onboard --auth-choice zai-api-key\n# or: openclaw onboard --zai-api-key "$ZAI_API_KEY"\n# Endpoint choices: --auth-choice zai-coding-global / zai-coding-cn',
     configSnippet: {
@@ -485,6 +619,20 @@ export const MODEL_PROVIDERS = [
     keyPattern: null,
     envKey: "OPENCODE_API_KEY",
     authChoice: "opencode-zen",
+    authOptions: [
+      {
+        id: "opencode-zen",
+        name: "OpenCode Zen",
+        icon: "🧪",
+        description: "Use OpenCode Zen subscription",
+      },
+      {
+        id: "apiKey",
+        name: "API Key",
+        icon: "🔑",
+        description: "Standard OpenCode API Key",
+      },
+    ],
     cliSetup:
       'openclaw onboard --auth-choice opencode-zen\n# or: openclaw onboard --opencode-zen-api-key "$OPENCODE_API_KEY"',
     configSnippet: {
@@ -524,6 +672,14 @@ export const MODEL_PROVIDERS = [
     keyPattern: null,
     envKey: "TOGETHER_API_KEY",
     authChoice: "together-api-key",
+    authOptions: [
+      {
+        id: "together-api-key",
+        name: "Together API Key",
+        icon: "🔑",
+        description: "Standard Together API Key",
+      },
+    ],
     cliSetup:
       'openclaw onboard --auth-choice together-api-key\n# or: openclaw onboard --non-interactive --auth-choice together-api-key --together-api-key "$TOGETHER_API_KEY"',
     configSnippet: {

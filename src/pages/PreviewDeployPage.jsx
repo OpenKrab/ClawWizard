@@ -19,6 +19,12 @@ export default function PreviewDeployPage() {
     password: '',
     privateKey: ''
   })
+  const [pairingList, setPairingList] = useState([])
+  const [loadingPairing, setLoadingPairing] = useState(false)
+  const [approveCode, setApproveCode] = useState('')
+  const [selectedChannel, setSelectedChannel] = useState('')
+  const [sendingTest, setSendingTest] = useState(false)
+  const [testMessage, setTestMessage] = useState('Hello! This is a test message to generate pairing code.')
   const logEndRef = useRef(null)
   const eventSourceRef = useRef(null)
 
@@ -41,10 +47,73 @@ export default function PreviewDeployPage() {
     }
   }, [])
 
+  // Pairing functions
+  const fetchPairing = async (channelId) => {
+    setLoadingPairing(true)
+    try {
+      const res = await fetch(`/api/pairing/list?channel=${channelId}`)
+      const list = await res.json()
+      setPairingList(list || [])
+    } catch {
+      setPairingList([])
+    } finally {
+      setLoadingPairing(false)
+    }
+  }
+
+  const handleApprove = async (channel, code) => {
+    try {
+      await fetch('/api/pairing/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel, code })
+      })
+      fetchPairing(channel)
+      setApproveCode('')
+    } catch (err) {
+      alert(`Approval failed: ${err}`)
+    }
+  }
+
+  const handleSendTest = async (channel) => {
+    if (!channel) return
+    
+    setSendingTest(true)
+    try {
+      const response = await fetch('/api/pairing/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel, message: testMessage })
+      })
+      const result = await response.json()
+      
+      if (result.success) {
+        // Auto-refresh pairing list after sending test message
+        setTimeout(() => {
+          fetchPairing(channel)
+        }, 2000) // Wait 2 seconds for pairing code to be generated
+      } else {
+        alert(`Failed to send test message: ${result.message}`)
+      }
+    } catch (err) {
+      alert(`Failed to send test message: ${err}`)
+    } finally {
+      setSendingTest(false)
+    }
+  }
+
   // Validation warnings
   const warnings = []
   if (!state.config.agents.defaults.model.primary) warnings.push('No model selected')
-  if (!state.apiKey && !state.skippedFields.includes('apiKey') && state.provider !== 'ollama') warnings.push('No API key provided')
+  
+  const currentProviderInfo = MODEL_PROVIDERS.find(p => p.id === state.provider)
+  const currentAuthOption = currentProviderInfo?.authOptions?.find(o => o.id === (state.authChoice || currentProviderInfo?.authChoice)) || currentProviderInfo?.authOptions?.[0]
+  const needsApiKey = state.provider !== 'ollama' && (!currentAuthOption || !currentAuthOption.isSubscription || currentAuthOption.isToken)
+  
+  if (needsApiKey && !state.apiKey && !state.skippedFields.includes('apiKey')) {
+    warnings.push('No API key provided')
+  }
+  
   if (enabledChannels.length === 0) warnings.push('No channels enabled')
 
   const handleCopy = () => {
@@ -86,6 +155,7 @@ export default function PreviewDeployPage() {
           workspaceFiles: state.workspaceFiles || {},
           provider: state.provider || '',
           apiKey: state.apiKey || '',
+          authChoice: state.authChoice || '',
           gatewayPort: state.config.gateway?.port || 18789,
           gatewayBind: state.config.gateway?.bind || 'loopback',
           useNonInteractive: true,
@@ -217,34 +287,49 @@ export default function PreviewDeployPage() {
 
       {/* ──── Deploy Status Banner ──── */}
       {deployStatus && (
-        <div className="animate-in" style={{
-          padding: 'var(--space-lg)',
+        <div className="animate-scale" style={{
+          padding: 'var(--space-xl)',
           background: statusBanner[deployStatus].bg,
           border: `1px solid ${statusBanner[deployStatus].border}`,
-          borderRadius: 'var(--radius-lg)',
+          borderRadius: 'var(--radius-xl)',
           marginBottom: 'var(--space-xl)',
           display: 'flex',
           alignItems: 'center',
-          gap: 'var(--space-lg)',
+          gap: 'var(--space-xl)',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <span style={{ fontSize: '40px' }}>{statusBanner[deployStatus].icon}</span>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: statusBanner[deployStatus].color, marginBottom: '4px' }}>
+          {/* Subtle glow */}
+          <div style={{ 
+            position: 'absolute', top: '-50px', left: '-50px', width: '200px', height: '200px', 
+            background: statusBanner[deployStatus].color, opacity: 0.1, filter: 'blur(60px)', borderRadius: '50%' 
+          }} />
+          
+          <span style={{ fontSize: '48px', position: 'relative' }}>{statusBanner[deployStatus].icon}</span>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 800, color: statusBanner[deployStatus].color, marginBottom: '6px', letterSpacing: '-0.01em' }}>
               {statusBanner[deployStatus].title}
             </h3>
             {deployStatus === 'success' && (
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-                Your OpenClaw agent is live and connected. Gateway is accepting connections on port {state.config.gateway?.port || 18789}.
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                Your OpenClaw agent is live and connected. Gateway is accepting connections on port <strong style={{color: 'var(--text-primary)'}}>{state.config.gateway?.port || 18789}</strong>.
               </p>
             )}
             {deployStatus === 'error' && (
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
                 Check the logs below for details. You can also try the manual deployment steps.
               </p>
             )}
+            {deployStatus === 'running' && (
+              <div style={{ marginTop: '12px', height: '4px', background: 'rgba(255,107,53,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                <div className="skeleton" style={{ width: '100%', height: '100%' }} />
+              </div>
+            )}
           </div>
           {deployStatus === 'success' && (
-            <span className="badge badge-success" style={{ fontSize: '12px', padding: '6px 14px' }}>● ONLINE</span>
+            <div style={{ textAlign: 'right' }}>
+               <span className="badge badge-success" style={{ fontSize: '12px', padding: '6px 14px', boxShadow: '0 0 20px rgba(34,197,94,0.3)' }}>● ONLINE</span>
+            </div>
           )}
         </div>
       )}
@@ -291,6 +376,166 @@ export default function PreviewDeployPage() {
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: card.status ? 'var(--status-success)' : 'var(--text-tertiary)', flexShrink: 0 }} />
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ──── Pairing Management (after successful deploy) ──── */}
+      {deployStatus === 'success' && enabledChannels.length > 0 && (
+        <div className="form-section animate-in" style={{ marginTop: 'var(--space-xl)' }}>
+          <h3 className="form-section-title">🔐 Approve First DM</h3>
+          <p className="field-hint" style={{ marginBottom: 'var(--space-lg)' }}>
+            When someone sends your first DM, they'll receive a pairing code. You can also send a test message to generate a code immediately.
+          </p>
+          
+          <div className="form-grid form-grid-2" style={{ marginBottom: 'var(--space-lg)' }}>
+            <div className="field">
+              <label className="field-label">Select Channel</label>
+              <select
+                className="field-select"
+                value={selectedChannel}
+                onChange={(e) => {
+                  setSelectedChannel(e.target.value)
+                  if (e.target.value) {
+                    fetchPairing(e.target.value)
+                  }
+                }}
+              >
+                <option value="">Choose a channel...</option>
+                {enabledChannels.map(chan => (
+                  <option key={chan.id} value={chan.id}>{chan.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="field">
+              <label className="field-label">Approval Code</label>
+              <input
+                className="field-input mono"
+                type="text"
+                placeholder="Enter 8-char code"
+                value={approveCode}
+                onChange={(e) => setApproveCode(e.target.value.toUpperCase())}
+                maxLength={8}
+              />
+            </div>
+          </div>
+
+          {/* Test Message Section */}
+          {selectedChannel && (
+            <div className="glass-card" style={{ 
+              padding: 'var(--space-lg)', 
+              marginBottom: 'var(--space-lg)',
+              background: 'rgba(59, 130, 246, 0.05)',
+              border: '1px solid rgba(59, 130, 246, 0.2)'
+            }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: 'var(--space-md)', color: 'var(--text-accent)' }}>
+                📤 Send Test Message
+              </h4>
+              <div style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <label className="field-label">Test Message</label>
+                  <input
+                    className="field-input"
+                    type="text"
+                    placeholder="Enter test message..."
+                    value={testMessage}
+                    onChange={(e) => setTestMessage(e.target.value)}
+                  />
+                </div>
+                <button
+                  className="btn btn-accent"
+                  onClick={() => handleSendTest(selectedChannel)}
+                  disabled={sendingTest || !testMessage.trim()}
+                >
+                  {sendingTest ? '⏳ Sending...' : '📤 Send Test'}
+                </button>
+              </div>
+              <p className="field-hint" style={{ marginTop: 'var(--space-sm)', marginBottom: 0 }}>
+                This will send a test message to generate a pairing code instantly.
+              </p>
+            </div>
+          )}
+
+          {selectedChannel && (
+            <div style={{ marginBottom: 'var(--space-lg)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Pending Requests {loadingPairing && '(Loading...)'}
+                </span>
+                <button 
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => fetchPairing(selectedChannel)}
+                  disabled={loadingPairing}
+                >
+                  🔄 Refresh
+                </button>
+              </div>
+              
+              {pairingList.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                  {pairingList.map((item, i) => (
+                    <div key={i} className="glass-card" style={{
+                      padding: 'var(--space-md)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: 'rgba(255,107,53,0.05)',
+                      border: '1px solid rgba(255,107,53,0.2)'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {item.sender || 'Unknown Sender'}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                          Code: {item.code}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                          {item.timestamp && new Date(item.timestamp).toLocaleString()}
+                        </div>
+                      </div>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleApprove(selectedChannel, item.code)}
+                      >
+                        ✓ Approve
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  padding: 'var(--space-lg)',
+                  textAlign: 'center',
+                  background: 'var(--glass-bg)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px dashed var(--glass-border)'
+                }}>
+                  <span style={{ fontSize: '24px', marginBottom: 'var(--space-sm)', display: 'block' }}>📭</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    No pending requests. Send a test message above or DM your bot directly.
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {selectedChannel && approveCode && (
+            <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => handleApprove(selectedChannel, approveCode)}
+                disabled={approveCode.length !== 8}
+              >
+                ✅ Approve Code: {approveCode}
+              </button>
+              <button
+                className="btn btn-ghost"
+                onClick={() => setApproveCode('')}
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </div>
       )}
 
