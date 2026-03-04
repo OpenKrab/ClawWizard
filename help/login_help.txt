@@ -1,0 +1,12 @@
+﻿
+≡ƒª₧ OpenClaw 2026.3.2 (85377a2) ΓÇö Open source means you can see exactly how I judge your config.
+
+Usage: openclaw channels login [options]
+
+Link a channel account (if supported)
+
+Options:
+  --account <id>       Account id (accountId)
+  --channel <channel>  Channel alias (auto when only one is configured)
+  -h, --help           Display help for command
+  --verbose            Verbose connection logs (default: false)

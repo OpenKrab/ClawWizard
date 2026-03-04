@@ -25,16 +25,18 @@ export default function App() {
 
   return (
     <div className="app-layout">
+      {/* Global Top-Right Header */}
+      <header className="app-header">
+        <LanguageSwitcher />
+        <ThemeSwitcher />
+      </header>
+
       {/* Sidebar */}
       <aside className="app-sidebar">
         <div className="logo">
           <span className="logo-icon">🦞</span>
           <span className="logo-text">ClawWizard</span>
           <span className="logo-version">v1.0</span>
-          <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto' }}>
-            <LanguageSwitcher />
-            <ThemeSwitcher />
-          </div>
         </div>
 
         <ul className="step-list">

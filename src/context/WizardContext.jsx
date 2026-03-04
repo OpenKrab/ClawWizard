@@ -100,6 +100,8 @@ const initialState = {
   },
   provider: 'anthropic',
   apiKey: '',
+  authChoice: '',
+  token: '',
   skippedFields: [],
   theme: 'dark', // Add theme state
   lang: 'en', // Add language state
@@ -148,6 +150,10 @@ function wizardReducer(state, action) {
       return { ...state, provider: action.payload }
     case 'SET_API_KEY':
       return { ...state, apiKey: action.payload }
+    case 'SET_AUTH_CHOICE':
+      return { ...state, authChoice: action.payload }
+    case 'SET_TOKEN':
+      return { ...state, token: action.payload }
     case 'SET_SOUL_MD':
       return { 
         ...state, 

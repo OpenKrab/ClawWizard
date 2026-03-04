@@ -16,11 +16,20 @@ export default function WelcomePage() {
 
   return (
     <div className="animate-in">
-      <div className="page-header">
-        <h1 className="page-title">
-          {t('welcome_title')} <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ClawWizard</span> 🦞
+      <div className="page-header" style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto var(--space-3xl)' }}>
+        <h1 className="page-title" style={{ fontSize: '3.5rem', marginBottom: 'var(--space-md)' }}>
+          {t('welcome_title')} <br/>
+          <span style={{ 
+            background: 'linear-gradient(90deg, #ff6b35, #ff2d78, #6366f1)',
+            WebkitBackgroundClip: 'text', 
+            WebkitTextFillColor: 'transparent',
+            backgroundSize: '200% auto',
+            animation: 'shimmer 3s linear infinite'
+          }}>
+            ClawWizard
+          </span> 🦞
         </h1>
-        <p className="page-subtitle">
+        <p className="page-subtitle" style={{ fontSize: '1.2rem', margin: '0 auto' }}>
           {t('welcome_subtitle')}
         </p>
       </div>

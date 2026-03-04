@@ -55,18 +55,52 @@ export default function SetupPage() {
         </p>
       </div>
 
-      <div className="glass-card" style={{ padding: 'var(--space-xl)', marginBottom: 'var(--space-xl)', textAlign: 'center' }}>
+      <div className="glass-card" style={{ 
+        padding: 'var(--space-3xl)', 
+        marginBottom: 'var(--space-2xl)', 
+        textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Decorative background glow */}
+        <div style={{ 
+          position: 'absolute', 
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)',
+          width: '300px',
+          height: '300px',
+          background: isReady ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+          filter: 'blur(80px)',
+          borderRadius: '50%',
+          zIndex: -1
+        }} />
+
         {loading ? (
-          <div style={{ color: 'var(--text-secondary)' }}>{t('checking_system')}</div>
+          <div className="animate-pulse" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-md)' }}>
+            <div className="skeleton" style={{ width: '80px', height: '80px', borderRadius: '50%' }} />
+            <div className="skeleton" style={{ width: '200px', height: '24px' }} />
+            <div className="skeleton" style={{ width: '150px', height: '16px' }} />
+          </div>
         ) : (
-          <div>
-            <div style={{ fontSize: '48px', marginBottom: 'var(--space-md)' }}>
+          <div className="animate-scale">
+            <div style={{ 
+              fontSize: '64px', 
+              marginBottom: 'var(--space-md)',
+              textShadow: isReady ? '0 0 20px rgba(34, 197, 94, 0.4)' : '0 0 20px rgba(239, 68, 68, 0.4)'
+            }}>
               {isReady ? '✅' : '⚠️'}
             </div>
-            <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: 'var(--space-sm)', color: isReady ? 'var(--status-success)' : 'var(--status-error)' }}>
+            <h2 style={{ 
+              fontSize: '32px', 
+              fontWeight: 800, 
+              marginBottom: 'var(--space-sm)', 
+              color: isReady ? 'var(--status-success)' : 'var(--status-error)',
+              letterSpacing: '-0.02em'
+            }}>
               {isReady ? t('openclaw_installed') : t('openclaw_not_found')}
             </h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-lg)' }}>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-2xl)', fontSize: '1.1rem' }}>
               {isReady 
                 ? `${t('version')}: ${status?.openclaw?.version || 'Unknown'} | ${t('node')}: ${status?.node?.version}`
                 : t('install_to_proceed')}
@@ -75,14 +109,16 @@ export default function SetupPage() {
             {!isReady && (
               <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'center' }}>
                 <button 
-                  className="btn btn-primary" 
+                  className={`btn ${installing ? 'btn-ghost' : 'btn-primary'} btn-lg`} 
                   onClick={handleAutoInstall}
                   disabled={installing}
-                  style={{ fontSize: '16px', padding: '12px 24px' }}
+                  style={{ minWidth: '200px' }}
                 >
-                  {installing ? t('installing_wait') : t('install_auto')}
+                  {installing ? (
+                    <span className="animate-pulse">⏳ {t('installing_wait')}</span>
+                  ) : t('install_auto')}
                 </button>
-                <button className="btn btn-ghost" onClick={checkStatus} disabled={installing}>
+                <button className="btn btn-secondary btn-lg" onClick={checkStatus} disabled={installing}>
                   {t('recheck_status')}
                 </button>
               </div>

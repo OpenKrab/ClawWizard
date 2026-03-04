@@ -1,0 +1,74 @@
+﻿
+≡ƒª₧ OpenClaw 2026.3.2 (85377a2) ΓÇö Alexa, but with taste.
+
+Usage: openclaw onboard [options]
+
+Interactive wizard to set up the gateway, workspace, and skills
+
+Options:
+  --accept-risk                            Acknowledge that agents are powerful and full system access is risky (required for --non-interactive) (default: false)
+  --ai-gateway-api-key <key>               Vercel AI Gateway API key
+  --anthropic-api-key <key>                Anthropic API key
+  --auth-choice <choice>                   Auth: token|openai-codex|chutes|vllm|apiKey|openai-api-key|mistral-api-key|openrouter-api-key|kilocode-api-key|ai-gateway-api-key|cloudflare-ai-gateway-api-key|moonshot-api-key|kimi-code-api-key|gemini-api-key|zai-api-key|xiaomi-api-key|minimax-api|synthetic-api-key|venice-api-key|together-api-key|huggingface-api-key|opencode-zen|xai-api-key|litellm-api-key|qianfan-api-key|volcengine-api-key|byteplus-api-key|moonshot-api-key-cn|github-copilot|gemini-api-key|google-gemini-cli|zai-api-key|zai-coding-global|zai-coding-cn|zai-global|zai-cn|xiaomi-api-key|minimax-portal|qwen-portal|copilot-proxy|apiKey|opencode-zen|minimax-api|minimax-api-key-cn|minimax-api-lightning|custom-api-key|skip|setup-token|oauth|claude-cli|codex-cli|minimax-cloud|minimax
+  --byteplus-api-key <key>                 BytePlus API key
+  --cloudflare-ai-gateway-account-id <id>  Cloudflare Account ID
+  --cloudflare-ai-gateway-api-key <key>    Cloudflare AI Gateway API key
+  --cloudflare-ai-gateway-gateway-id <id>  Cloudflare AI Gateway ID
+  --custom-api-key <key>                   Custom provider API key (optional)
+  --custom-base-url <url>                  Custom provider base URL
+  --custom-compatibility <mode>            Custom provider API compatibility: openai|anthropic (default: openai)
+  --custom-model-id <id>                   Custom provider model ID
+  --custom-provider-id <id>                Custom provider ID (optional; auto-derived by default)
+  --daemon-runtime <runtime>               Daemon runtime: node|bun
+  --flow <flow>                            Wizard flow: quickstart|advanced|manual
+  --gateway-auth <mode>                    Gateway auth: token|password
+  --gateway-bind <mode>                    Gateway bind: loopback|tailnet|lan|auto|custom
+  --gateway-password <password>            Gateway password (password auth)
+  --gateway-port <port>                    Gateway port
+  --gateway-token <token>                  Gateway token (token auth)
+  --gemini-api-key <key>                   Gemini API key
+  -h, --help                               Display help for command
+  --huggingface-api-key <key>              Hugging Face API key (HF token)
+  --install-daemon                         Install gateway service
+  --json                                   Output JSON summary (default: false)
+  --kilocode-api-key <key>                 Kilo Gateway API key
+  --kimi-code-api-key <key>                Kimi Coding API key
+  --litellm-api-key <key>                  LiteLLM API key
+  --minimax-api-key <key>                  MiniMax API key
+  --mistral-api-key <key>                  Mistral API key
+  --mode <mode>                            Wizard mode: local|remote
+  --moonshot-api-key <key>                 Moonshot API key
+  --no-install-daemon                      Skip gateway service install
+  --node-manager <name>                    Node manager for skills: npm|pnpm|bun
+  --non-interactive                        Run without prompts (default: false)
+  --openai-api-key <key>                   OpenAI API key
+  --opencode-zen-api-key <key>             OpenCode Zen API key
+  --openrouter-api-key <key>               OpenRouter API key
+  --qianfan-api-key <key>                  QIANFAN API key
+  --remote-token <token>                   Remote Gateway token (optional)
+  --remote-url <url>                       Remote Gateway WebSocket URL
+  --reset                                  Reset config + credentials + sessions before running wizard (workspace only with --reset-scope full)
+  --reset-scope <scope>                    Reset scope: config|config+creds+sessions|full
+  --secret-input-mode <mode>               API key persistence mode: plaintext|ref (default: plaintext)
+  --skip-channels                          Skip channel setup
+  --skip-daemon                            Skip gateway service install
+  --skip-health                            Skip health check
+  --skip-skills                            Skip skills setup
+  --skip-ui                                Skip Control UI/TUI prompts
+  --synthetic-api-key <key>                Synthetic API key
+  --tailscale <mode>                       Tailscale: off|serve|funnel
+  --tailscale-reset-on-exit                Reset tailscale serve/funnel on exit
+  --together-api-key <key>                 Together AI API key
+  --token <token>                          Token value (non-interactive; used with --auth-choice token)
+  --token-expires-in <duration>            Optional token expiry duration (e.g. 365d, 12h)
+  --token-profile-id <id>                  Auth profile id (non-interactive; default: <provider>:manual)
+  --token-provider <id>                    Token provider id (non-interactive; used with --auth-choice token)
+  --venice-api-key <key>                   Venice API key
+  --volcengine-api-key <key>               Volcano Engine API key
+  --workspace <dir>                        Agent workspace directory (default: ~/.openclaw/workspace)
+  --xai-api-key <key>                      xAI API key
+  --xiaomi-api-key <key>                   Xiaomi API key
+  --zai-api-key <key>                      Z.AI API key
+
+Docs: https://docs.openclaw.ai/cli/onboard
+
