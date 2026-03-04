@@ -397,7 +397,15 @@ export const MODEL_PROVIDERS = [
     consoleUrl: "https://openrouter.ai/keys",
     keyPattern: /^sk-or-/,
     envKey: "OPENROUTER_API_KEY",
-    authChoice: "apiKey",
+    authChoice: "openrouter-api-key",
+    authOptions: [
+      {
+        id: "openrouter-api-key",
+        name: "API Key",
+        icon: "🔑",
+        description: "OpenRouter API Key",
+      },
+    ],
     cliSetup:
       'openclaw onboard --auth-choice apiKey --token-provider openrouter --token "$OPENROUTER_API_KEY"',
     configSnippet: {
@@ -424,6 +432,14 @@ export const MODEL_PROVIDERS = [
     keyPattern: /^vapi_/,
     envKey: "VENICE_API_KEY",
     authChoice: "venice-api-key",
+    authOptions: [
+      {
+        id: "venice-api-key",
+        name: "API Key",
+        icon: "🔑",
+        description: "Venice AI API Key",
+      },
+    ],
     cliSetup:
       'openclaw onboard --auth-choice venice-api-key\n# or: openclaw onboard --non-interactive --auth-choice venice-api-key --venice-api-key "vapi_xxx"',
     configSnippet: {
@@ -525,7 +541,7 @@ export const MODEL_PROVIDERS = [
     authOptions: [
       {
         id: "mistral-api-key",
-        name: "Mistral API Key",
+        name: "API Key",
         icon: "🔑",
         description: "Standard Mistral API Key",
       },
@@ -551,7 +567,7 @@ export const MODEL_PROVIDERS = [
     authOptions: [
       {
         id: "xai-api-key",
-        name: "xAI API Key",
+        name: "API Key",
         icon: "🔑",
         description: "Standard xAI API Key",
       },
@@ -627,7 +643,7 @@ export const MODEL_PROVIDERS = [
         description: "Use OpenCode Zen subscription",
       },
       {
-        id: "apiKey",
+        id: "opencode-zen",
         name: "API Key",
         icon: "🔑",
         description: "Standard OpenCode API Key",
@@ -791,7 +807,15 @@ export const MODEL_PROVIDERS = [
     consoleUrl: null,
     keyPattern: null,
     envKey: "OLLAMA_API_KEY",
-    authChoice: "skip",
+    authChoice: "ai-gateway-api-key",
+    authOptions: [
+      {
+        id: "ai-gateway-api-key",
+        name: "API Key",
+        icon: "🔑",
+        description: "Vercel AI Gateway API Key",
+      },
+    ],
     cliSetup:
       'ollama pull gpt-oss:20b\nexport OLLAMA_API_KEY="ollama-local"\nopenclaw config set models.providers.ollama.apiKey "ollama-local"',
     configSnippet: {

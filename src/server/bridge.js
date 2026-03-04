@@ -110,13 +110,13 @@ const AUTH_CHOICE_MAP = {
   mistral: "mistral-api-key",
   zai: "zai-api-key",
   // Providers that authenticate via .env only (no dedicated CLI flag)
-  kilocode: "skip",
-  openrouter: "skip",
+  kilocode: "kilocode-api-key",
+  openrouter: "openrouter-api-key",
   groq: "skip",
   deepseek: "skip",
-  together: "skip",
-  venice: "skip",
-  minimax: "skip",
+  together: "together-api-key",
+  venice: "venice-api-key",
+  minimax: "minimax-api",
   ollama: "skip",
   vllm: "skip",
 };
