@@ -33,6 +33,62 @@ const INTERACTIVE_AUTH_CHOICES = new Set([
   "copilot-proxy",
 ]);
 
+// Deep merge utility — merges source into target without overwriting nested objects
+function deepMerge(target, source) {
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    if (
+      source[key] &&
+      typeof source[key] === "object" &&
+      !Array.isArray(source[key]) &&
+      target[key] &&
+      typeof target[key] === "object" &&
+      !Array.isArray(target[key])
+    ) {
+      result[key] = deepMerge(target[key], source[key]);
+    } else if (source[key] !== undefined) {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
+
+// Auth choice → CLI API key flag mapping
+// Maps each authChoice ID to the correct --xxx-api-key CLI flag
+const AUTH_KEY_FLAGS = {
+  apiKey: "--anthropic-api-key",
+  "openai-api-key": "--openai-api-key",
+  "gemini-api-key": "--gemini-api-key",
+  "moonshot-api-key": "--moonshot-api-key",
+  "moonshot-api-key-cn": "--moonshot-api-key",
+  "kimi-code-api-key": "--kimi-code-api-key",
+  "xai-api-key": "--xai-api-key",
+  "mistral-api-key": "--mistral-api-key",
+  "openrouter-api-key": "--openrouter-api-key",
+  "kilocode-api-key": "--kilocode-api-key",
+  "synthetic-api-key": "--synthetic-api-key",
+  "venice-api-key": "--venice-api-key",
+  "together-api-key": "--together-api-key",
+  "huggingface-api-key": "--huggingface-api-key",
+  "litellm-api-key": "--litellm-api-key",
+  "ai-gateway-api-key": "--ai-gateway-api-key",
+  "cloudflare-ai-gateway-api-key": "--cloudflare-ai-gateway-api-key",
+  "opencode-zen": "--opencode-zen-api-key",
+  "zai-api-key": "--zai-api-key",
+  "zai-coding-global": "--zai-api-key",
+  "zai-coding-cn": "--zai-api-key",
+  "zai-global": "--zai-api-key",
+  "zai-cn": "--zai-api-key",
+  "xiaomi-api-key": "--xiaomi-api-key",
+  "minimax-api": "--minimax-api-key",
+  "minimax-api-key-cn": "--minimax-api-key",
+  "minimax-api-lightning": "--minimax-api-key",
+  "qianfan-api-key": "--qianfan-api-key",
+  "volcengine-api-key": "--volcengine-api-key",
+  "byteplus-api-key": "--byteplus-api-key",
+  "custom-api-key": "--custom-api-key",
+};
+
 // Ensure directories exist
 if (!fs.existsSync(OPENCLAW_DIR))
   fs.mkdirSync(OPENCLAW_DIR, { recursive: true });
@@ -199,7 +255,19 @@ const server = http.createServer(async (req, res) => {
       };
       resolvedBind = bindMap[resolvedBind] || resolvedBind;
 
-      const finalConfig = {
+      // Read existing config to preserve fields that wizard doesn't manage
+      // (e.g. meta, wizard, browser, auth sections written by prior onboard runs)
+      let existingConfig = {};
+      try {
+        if (fs.existsSync(CONFIG_PATH)) {
+          existingConfig = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
+        }
+      } catch {
+        // If existing config is corrupt, start fresh
+        existingConfig = {};
+      }
+
+      const finalConfig = deepMerge(existingConfig, {
         ...config,
         gateway: {
           ...config.gateway,
@@ -207,7 +275,7 @@ const server = http.createServer(async (req, res) => {
           port: gatewayPort || config.gateway?.port || 18789,
           bind: resolvedBind,
         },
-      };
+      });
 
       fs.writeFileSync(CONFIG_PATH, JSON.stringify(finalConfig, null, 2));
       steps.push("✅ Wrote openclaw.json to " + CONFIG_PATH);
@@ -317,70 +385,19 @@ const server = http.createServer(async (req, res) => {
           String(finalConfig.gateway.port),
           "--gateway-bind",
           finalConfig.gateway.bind,
+          "--skip-channels",
+          "--skip-skills",
+          "--skip-health",
         ];
 
-        // Add auth choice flags
+        // Add auth choice flags using lookup table
         if (authChoice !== "skip") {
           args.push("--auth-choice", authChoice);
 
-          // Map provider-specific key flags based on authChoice or provider
-          if (
-            (authChoice === "apiKey" || authChoice === "anthropic-api-key") &&
-            apiKey
-          ) {
-            args.push("--anthropic-api-key", apiKey);
-          } else if (
-            (authChoice === "apiKey" || authChoice === "openai-api-key") &&
-            apiKey
-          ) {
-            args.push("--openai-api-key", apiKey);
-          } else if (
-            (authChoice === "gemini-api-key" || authChoice === "apiKey") &&
-            apiKey
-          ) {
-            args.push("--gemini-api-key", apiKey);
-          } else if (
-            (authChoice === "xai-api-key" || authChoice === "apiKey") &&
-            apiKey
-          ) {
-            args.push("--xai-api-key", apiKey);
-          } else if (
-            (authChoice === "moonshot-api-key" || authChoice === "apiKey") &&
-            apiKey
-          ) {
-            args.push("--moonshot-api-key", apiKey);
-          } else if (
-            (authChoice === "synthetic-api-key" || authChoice === "apiKey") &&
-            apiKey
-          ) {
-            args.push("--synthetic-api-key", apiKey);
-          } else if (
-            (authChoice === "mistral-api-key" || authChoice === "apiKey") &&
-            apiKey
-          ) {
-            args.push("--mistral-api-key", apiKey);
-          } else if (
-            (authChoice === "opencode-zen" || authChoice === "apiKey") &&
-            apiKey
-          ) {
-            args.push("--opencode-zen-api-key", apiKey);
-          } else if (
-            (authChoice === "ai-gateway-api-key" || authChoice === "apiKey") &&
-            apiKey
-          ) {
-            args.push("--ai-gateway-api-key", apiKey);
-          } else if (
-            (authChoice === "zai-api-key" ||
-              authChoice === "apiKey" ||
-              authChoice.startsWith("zai-")) &&
-            apiKey
-          ) {
-            args.push("--zai-api-key", apiKey);
-          } else if (
-            (authChoice === "xiaomi-api-key" || authChoice === "apiKey") &&
-            apiKey
-          ) {
-            args.push("--xiaomi-api-key", apiKey);
+          // Find the correct --xxx-api-key flag for this auth choice
+          const keyFlag = AUTH_KEY_FLAGS[authChoice];
+          if (keyFlag && apiKey) {
+            args.push(keyFlag, apiKey);
           }
         } else {
           args.push("--auth-choice", "skip");
