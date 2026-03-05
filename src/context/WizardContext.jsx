@@ -41,14 +41,16 @@ const defaultConfig = {
   channels: {
     whatsapp: { enabled: false, dmPolicy: 'pairing', allowFrom: [] },
     telegram: { enabled: false, botToken: '', dmPolicy: 'pairing', allowFrom: [] },
-    discord: { enabled: false, botToken: '', applicationId: '', dmPolicy: 'pairing', allowFrom: [] },
+    discord: { enabled: false, token: '', dmPolicy: 'pairing', allowFrom: [] },
     slack: { enabled: false, botToken: '', appToken: '', dmPolicy: 'pairing', allowFrom: [] },
     signal: { enabled: false, dmPolicy: 'pairing' },
     imessage: { enabled: false, dmPolicy: 'pairing' },
     googlechat: { enabled: false, dmPolicy: 'pairing' },
-    mattermost: { enabled: false, url: '', token: '', dmPolicy: 'pairing' },
+    mattermost: { enabled: false, baseUrl: '', botToken: '', dmPolicy: 'pairing' },
     msteams: { enabled: false, dmPolicy: 'pairing' },
-    bluebubbles: { enabled: false, dmPolicy: 'pairing' },
+    bluebubbles: { enabled: false, httpUrl: '', password: '', webhookPath: '/bluebubbles-webhook', dmPolicy: 'pairing', groupPolicy: 'allowlist' },
+    'nextcloud-talk': { enabled: false, dmPolicy: 'pairing' },
+    'synology-chat': { enabled: false, dmPolicy: 'pairing' },
     matrix: { enabled: false, dmPolicy: 'pairing' },
     zalo: { enabled: false, dmPolicy: 'pairing' },
     webchat: { enabled: false, dmPolicy: 'pairing' },
@@ -302,12 +304,36 @@ export function WizardProvider({ children }) {
     delete cfg.sessionRetention
     delete cfg.imageMaxDimensionPx
 
-    // 6. Remove groupPolicy from channels (not a valid key)
-    for (const ch of Object.values(cfg.channels || {})) {
-      delete ch.groupPolicy
+    // 6. Migrate legacy Discord keys to current schema
+    if (cfg.channels?.discord) {
+      if (!cfg.channels.discord.token && cfg.channels.discord.botToken) {
+        cfg.channels.discord.token = cfg.channels.discord.botToken
+      }
+      delete cfg.channels.discord.botToken
+      delete cfg.channels.discord.applicationId
+    }
+    if (cfg.channels?.mattermost) {
+      if (!cfg.channels.mattermost.baseUrl && cfg.channels.mattermost.url) {
+        cfg.channels.mattermost.baseUrl = cfg.channels.mattermost.url
+      }
+      if (!cfg.channels.mattermost.botToken && cfg.channels.mattermost.token) {
+        cfg.channels.mattermost.botToken = cfg.channels.mattermost.token
+      }
+      delete cfg.channels.mattermost.url
+      delete cfg.channels.mattermost.token
     }
 
-    // 7. Remove extra queue keys that aren't in schema
+    // 7. Rename legacy channel keys to official ids
+    if (cfg.channels?.nextcloud && !cfg.channels['nextcloud-talk']) {
+      cfg.channels['nextcloud-talk'] = cfg.channels.nextcloud
+      delete cfg.channels.nextcloud
+    }
+    if (cfg.channels?.synologychat && !cfg.channels['synology-chat']) {
+      cfg.channels['synology-chat'] = cfg.channels.synologychat
+      delete cfg.channels.synologychat
+    }
+
+    // 8. Remove extra queue keys that aren't in schema
     if (cfg.messages?.queue) {
       delete cfg.messages.queue.debounceMs
       delete cfg.messages.queue.cap
@@ -323,6 +349,8 @@ export function WizardProvider({ children }) {
         openai: 'OPENAI_API_KEY',
         openrouter: 'OPENROUTER_API_KEY',
         google: 'GEMINI_API_KEY',
+        'vercel-ai-gateway': 'AI_GATEWAY_API_KEY',
+        'cloudflare-ai-gateway': 'CLOUDFLARE_AI_GATEWAY_API_KEY',
         kilocode: 'KILO_API_KEY',
         groq: 'GROQ_API_KEY',
         mistral: 'MISTRAL_API_KEY',
@@ -334,6 +362,11 @@ export function WizardProvider({ children }) {
         venice: 'VENICE_API_KEY',
         opencode: 'OPENCODE_API_KEY',
         synthetic: 'SYNTHETIC_API_KEY',
+        zai: 'ZAI_API_KEY',
+        glm: 'ZHIPU_API_KEY',
+        qianfan: 'QIANFAN_ACCESS_KEY',
+        deepgram: 'DEEPGRAM_API_KEY',
+        xiaomi: 'XIAOMI_API_KEY',
       }[state.provider]
       if (envKey) {
         cfg.env = { ...cfg.env, [envKey]: state.apiKey }

@@ -18,7 +18,7 @@
 - **🛠️ Tools & Skills**: Select and configure tool groups for your AI agent.
 - **🚀 One-Click Deploy**: Deploy locally or to a **Remote VPS via SSH**. Writes config files, starts the gateway, and auto-opens the OpenClaw Dashboard.
 - **☁️ Remote Cloud Support**: Integrated SSH deployment handler. Provision your agent on any Linux server directly from the wizard.
-- **🖥️ Native Desktop App**: Runs as a lightweight native application on Windows and macOS via **Tauri**.
+- **🖥️ Platform Coverage**: Quick links and setup guidance for OpenClaw platforms: macOS App, Linux App, Windows (WSL2), Android App, iOS App, DigitalOcean, Oracle Cloud, and Raspberry Pi.
 - **🛰️ Log Streaming**: Watch your AI assistant come to life with real-time log streaming in a web-based terminal.
 - **💎 Premium Design**: Dark-mode glassmorphism interface with fluid animations and micro-interactions.
 

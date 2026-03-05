@@ -127,8 +127,7 @@ export const TEMPLATES = [
         },
         discord: {
           enabled: true,
-          botToken: "",
-          applicationId: "",
+          token: "",
           dmPolicy: "pairing",
           allowFrom: [],
         },
@@ -268,7 +267,7 @@ export const USE_CASES = [
 export const MODEL_PROVIDERS = [
   {
     id: "anthropic",
-    name: "Anthropic (Claude)",
+    name: "Anthropic",
     icon: "🧠",
     models: [
       "anthropic/claude-opus-4-6",
@@ -289,7 +288,7 @@ export const MODEL_PROVIDERS = [
       },
       {
         id: "token",
-        name: "Setup Token",
+        name: "Claude Max API Proxy",
         icon: "🎫",
         description: "Paste token from 'claude setup-token'",
         isToken: true,
@@ -300,6 +299,35 @@ export const MODEL_PROVIDERS = [
     configSnippet: {
       env: { ANTHROPIC_API_KEY: "sk-ant-..." },
       agents: { defaults: { model: { primary: "anthropic/claude-opus-4-6" } } },
+    },
+  },
+  {
+    id: "claude-max-proxy",
+    name: "Claude Max API Proxy",
+    icon: "🎫",
+    models: [
+      "anthropic/claude-opus-4-6",
+      "anthropic/claude-3-7-sonnet",
+      "anthropic/claude-3-5-sonnet",
+      "anthropic/claude-3-5-haiku",
+    ],
+    consoleUrl: "https://docs.openclaw.ai/providers/anthropic",
+    keyPattern: null,
+    envKey: null,
+    authChoice: "token",
+    authOptions: [
+      {
+        id: "token",
+        name: "Claude Max API Proxy",
+        icon: "🎫",
+        description: "Paste token from 'claude setup-token'",
+        isToken: true,
+        isSubscription: true,
+      },
+    ],
+    cliSetup: "openclaw onboard --auth-choice token",
+    configSnippet: {
+      agents: { defaults: { model: { primary: "anthropic/claude-3-7-sonnet" } } },
     },
   },
   {
@@ -347,6 +375,30 @@ export const MODEL_PROVIDERS = [
     configSnippet: {
       env: { OPENAI_API_KEY: "sk-..." },
       agents: { defaults: { model: { primary: "openai/gpt-5.1-codex" } } },
+    },
+  },
+  {
+    id: "github-copilot",
+    name: "GitHub Copilot",
+    icon: "🐙",
+    models: ["openai-codex/gpt-5.3-codex"],
+    consoleUrl: "https://docs.openclaw.ai/providers/github-copilot",
+    keyPattern: null,
+    envKey: null,
+    authChoice: "github-copilot",
+    authOptions: [
+      {
+        id: "github-copilot",
+        name: "GitHub Copilot",
+        icon: "🐙",
+        description: "GitHub device login",
+        isOAuth: true,
+        isSubscription: true,
+      },
+    ],
+    cliSetup: "openclaw onboard --auth-choice github-copilot",
+    configSnippet: {
+      agents: { defaults: { model: { primary: "openai-codex/gpt-5.3-codex" } } },
     },
   },
   {
@@ -643,7 +695,7 @@ export const MODEL_PROVIDERS = [
         description: "Use OpenCode Zen subscription",
       },
       {
-        id: "opencode-zen",
+        id: "opencode-zen-api-key",
         name: "API Key",
         icon: "🔑",
         description: "Standard OpenCode API Key",
@@ -890,7 +942,7 @@ export const MODEL_PROVIDERS = [
   },
   {
     id: "glm",
-    name: "GLM (Zhipu AI)",
+    name: "GLM Models",
     icon: "🇨🇳",
     models: ["glm/glm-4-plus", "glm/glm-4-flash"],
     consoleUrl: "https://open.bigmodel.cn/usercenter/apikeys",
@@ -931,7 +983,7 @@ export const MODEL_PROVIDERS = [
   },
   {
     id: "xiaomi",
-    name: "Xiaomi Xiaoai AI",
+    name: "Xiaomi MiMo",
     icon: "📱",
     models: ["xiaomi/mi-llama-3"],
     consoleUrl: null,
@@ -962,6 +1014,7 @@ export const MESSAGING_CHANNELS = [
     name: "Telegram",
     icon: "📱",
     envKey: "TELEGRAM_BOT_TOKEN",
+    credentialField: "botToken",
     cliSetup: `openclaw channels add --channel telegram --token "$TELEGRAM_BOT_TOKEN"\nopenclaw gateway`,
     configSnippet: {
       channels: {
@@ -997,7 +1050,9 @@ export const MESSAGING_CHANNELS = [
     name: "Discord",
     icon: "👾",
     envKey: "DISCORD_BOT_TOKEN",
-    cliSetup: `openclaw channels add --channel discord --token "$DISCORD_BOT_TOKEN"\nopenclaw gateway`,
+    credentialField: "token",
+    cliSetup:
+      'openclaw config set channels.discord.token "\\"$DISCORD_BOT_TOKEN\\"" --json\nopenclaw config set channels.discord.enabled true --json\nopenclaw gateway',
     configSnippet: {
       channels: {
         discord: {
@@ -1017,6 +1072,7 @@ export const MESSAGING_CHANNELS = [
     name: "Slack",
     icon: "💬",
     envKey: "SLACK_BOT_TOKEN",
+    credentialField: "botToken",
     cliSetup: `openclaw channels add --channel slack --bot-token "xoxb-YOUR_BOT_TOKEN" --app-token "xapp-YOUR_APP_TOKEN"\nopenclaw gateway`,
     configSnippet: {
       channels: {
@@ -1053,14 +1109,17 @@ export const MESSAGING_CHANNELS = [
     name: "BlueBubbles (iMessage)",
     icon: "🫧",
     envKey: null,
-    cliSetup: `openclaw channels add --channel bluebubbles --webhook-path "/bluebubbles-webhook"`,
+    cliSetup:
+      'openclaw channels add bluebubbles --http-url "http://192.168.1.100:1234" --password "YOUR_BLUEBUBBLES_PASSWORD" --webhook-path "/bluebubbles-webhook"\nopenclaw channels login bluebubbles',
     configSnippet: {
       channels: {
         bluebubbles: {
           enabled: true,
-          serverUrl: "http://192.168.1.100:1234",
+          httpUrl: "http://192.168.1.100:1234",
           password: "example-password",
           webhookPath: "/bluebubbles-webhook",
+          dmPolicy: "pairing",
+          groupPolicy: "allowlist",
         },
       },
     },
@@ -1071,7 +1130,9 @@ export const MESSAGING_CHANNELS = [
     name: "Feishu / Lark",
     icon: "🐦",
     envKey: "FEISHU_APP_ID",
-    cliSetup: "openclaw channels add --channel feishu",
+    credentialField: "appId",
+    cliSetup:
+      "openclaw plugins install @openclaw/feishu\nopenclaw channels add --channel feishu",
     configSnippet: {
       channels: {
         feishu: {
@@ -1106,7 +1167,9 @@ export const MESSAGING_CHANNELS = [
     name: "Mattermost",
     icon: "🔵",
     envKey: "MATTERMOST_BOT_TOKEN",
-    cliSetup: "openclaw channels add --channel mattermost",
+    credentialField: "botToken",
+    cliSetup:
+      "openclaw plugins install @openclaw/mattermost\nopenclaw channels add --channel mattermost",
     configSnippet: {
       channels: {
         mattermost: {
@@ -1118,43 +1181,6 @@ export const MESSAGING_CHANNELS = [
       },
     },
     docsUrl: "https://docs.openclaw.ai/channels/mattermost",
-  },
-  {
-    id: "signal",
-    name: "Signal",
-    icon: "💙",
-    envKey: null,
-    cliSetup:
-      'signal-cli link -n "OpenClaw"\nopenclaw pairing approve signal <CODE>',
-    configSnippet: {
-      channels: {
-        signal: {
-          enabled: true,
-          account: "+15551234567",
-          cliPath: "signal-cli",
-          dmPolicy: "pairing",
-        },
-      },
-    },
-    docsUrl: "https://docs.openclaw.ai/channels/signal",
-  },
-  {
-    id: "bluebubbles",
-    name: "BlueBubbles (iMessage)",
-    icon: "🫧",
-    envKey: null,
-    cliSetup: "openclaw onboard # (Select BlueBubbles)",
-    configSnippet: {
-      channels: {
-        bluebubbles: {
-          enabled: true,
-          serverUrl: "http://192.168.1.100:1234",
-          password: "example-password",
-          webhookPath: "/bluebubbles-webhook",
-        },
-      },
-    },
-    docsUrl: "https://docs.openclaw.ai/channels/bluebubbles",
   },
   {
     id: "imessage",
@@ -1176,7 +1202,9 @@ export const MESSAGING_CHANNELS = [
     name: "MS Teams",
     icon: "🟣",
     envKey: "MSTEAMS_APP_ID",
-    cliSetup: "openclaw channels add --channel msteams",
+    credentialField: "appId",
+    cliSetup:
+      "openclaw plugins install @openclaw/msteams\nopenclaw channels add --channel msteams",
     configSnippet: {
       channels: {
         msteams: {
@@ -1191,14 +1219,14 @@ export const MESSAGING_CHANNELS = [
     docsUrl: "https://docs.openclaw.ai/channels/msteams",
   },
   {
-    id: "synologychat",
+    id: "synology-chat",
     name: "Synology Chat",
     icon: "☁️",
     envKey: null,
     cliSetup: "openclaw plugins install synology-chat",
     configSnippet: {
       channels: {
-        synologychat: {
+        "synology-chat": {
           enabled: true,
           incomingWebhookUrl: "...",
           token: "...",
@@ -1212,7 +1240,9 @@ export const MESSAGING_CHANNELS = [
     name: "LINE",
     icon: "📱",
     envKey: "LINE_CHANNEL_ACCESS_TOKEN",
-    cliSetup: "openclaw channels add --channel line",
+    credentialField: "channelAccessToken",
+    cliSetup:
+      "openclaw plugins install @openclaw/line\nopenclaw channels add --channel line",
     configSnippet: {
       channels: {
         line: {
@@ -1229,7 +1259,9 @@ export const MESSAGING_CHANNELS = [
     name: "Matrix",
     icon: "🟢",
     envKey: "MATRIX_ACCESS_TOKEN",
-    cliSetup: `openclaw channels add --channel matrix --homeserver "https://matrix.org" --user-id "@mybot:matrix.org" --password "BOT_PASS"`,
+    credentialField: "accessToken",
+    cliSetup:
+      'openclaw plugins install @openclaw/matrix\nopenclaw channels add --channel matrix --homeserver "https://matrix.org" --user-id "@mybot:matrix.org" --password "BOT_PASS"',
     configSnippet: {
       channels: {
         matrix: {
@@ -1243,14 +1275,14 @@ export const MESSAGING_CHANNELS = [
     docsUrl: "https://docs.openclaw.ai/channels/matrix",
   },
   {
-    id: "nextcloud",
+    id: "nextcloud-talk",
     name: "Nextcloud Talk",
     icon: "☁️",
     envKey: null,
     cliSetup: "openclaw plugins install nextcloud-talk",
     configSnippet: {
       channels: {
-        nextcloud: {
+        "nextcloud-talk": {
           enabled: true,
           baseUrl: "https://nextcloud.example.com",
           token: "...",
@@ -1264,6 +1296,7 @@ export const MESSAGING_CHANNELS = [
     name: "Nostr",
     icon: "💜",
     envKey: "NOSTR_PRIVATE_KEY",
+    credentialField: "privateKey",
     cliSetup: "openclaw channels add --channel nostr",
     configSnippet: {
       channels: {
@@ -1281,7 +1314,8 @@ export const MESSAGING_CHANNELS = [
     name: "Tlon (Urbit)",
     icon: "🛸",
     envKey: null,
-    cliSetup: `openclaw channels add --channel tlon --ship "~sampel-palnet" --code "suqhut-matpyl-..." --url "http://localhost:8080"`,
+    cliSetup:
+      'openclaw plugins install @openclaw/tlon\nopenclaw channels add --channel tlon --ship "~sampel-palnet" --code "suqhut-matpyl-..." --url "http://localhost:8080"',
     configSnippet: {
       channels: {
         tlon: {
@@ -1298,7 +1332,9 @@ export const MESSAGING_CHANNELS = [
     name: "Twitch",
     icon: "🟣",
     envKey: "TWITCH_OAUTH_TOKEN",
-    cliSetup: "openclaw channels add --channel twitch",
+    credentialField: "oauthToken",
+    cliSetup:
+      "openclaw plugins install @openclaw/twitch\nopenclaw channels add --channel twitch",
     configSnippet: {
       channels: {
         twitch: {
@@ -1315,7 +1351,9 @@ export const MESSAGING_CHANNELS = [
     name: "Zalo (Bot API)",
     icon: "🔵",
     envKey: "ZALO_BOT_TOKEN",
-    cliSetup: "openclaw channels add --channel zalo",
+    credentialField: "botToken",
+    cliSetup:
+      "openclaw plugins install @openclaw/zalo\nopenclaw channels add --channel zalo",
     configSnippet: {
       channels: {
         zalo: {
@@ -1332,7 +1370,8 @@ export const MESSAGING_CHANNELS = [
     name: "Zalo (Personal)",
     icon: "👤",
     envKey: null,
-    cliSetup: "openclaw channels add --channel zalouser",
+    cliSetup:
+      "openclaw plugins install @openclaw/zalouser\nopenclaw channels add --channel zalouser",
     configSnippet: {
       channels: {
         zalouser: {

@@ -2,6 +2,36 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useWizard } from '../context/WizardContext'
 import { MODEL_PROVIDERS } from '../data/templates'
 
+const PROVIDER_DOC_PATH_MAP = {
+  anthropic: 'anthropic',
+  'claude-max-proxy': 'anthropic',
+  'amazon-bedrock': 'amazon-bedrock',
+  'cloudflare-ai-gateway': 'cloudflare-ai-gateway',
+  deepgram: 'deepgram',
+  'github-copilot': 'github-copilot',
+  huggingface: 'hugging-face',
+  kilocode: 'kilocode',
+  litellm: 'litellm',
+  glm: 'glm',
+  minimax: 'minimax',
+  moonshot: 'moonshot',
+  mistral: 'mistral',
+  nvidia: 'nvidia',
+  ollama: 'ollama',
+  openai: 'openai',
+  opencode: 'opencode',
+  openrouter: 'openrouter',
+  qianfan: 'qianfan',
+  qwen: 'qwen',
+  synthetic: 'synthetic',
+  together: 'together',
+  'vercel-ai-gateway': 'vercel-ai-gateway',
+  venice: 'venice',
+  vllm: 'vllm',
+  xiaomi: 'xiaomi',
+  zai: 'z-ai',
+}
+
 export default function ModelAuthPage() {
   const { state, dispatch, nextStep, prevStep } = useWizard()
   const [showKey, setShowKey] = useState(false)
@@ -92,6 +122,8 @@ export default function ModelAuthPage() {
 
   const currentProviderInfo = providerList.find(p => p.id === state.provider) || providerList[0]
   const currentAuthOption = currentProviderInfo?.authOptions?.find(o => o.id === (state.authChoice || currentProviderInfo?.authChoice)) || currentProviderInfo?.authOptions?.[0]
+  const providerDocsPath = PROVIDER_DOC_PATH_MAP[state.provider]
+  const providerDocsUrl = providerDocsPath ? `https://docs.openclaw.ai/providers/${providerDocsPath}` : ''
 
   const needsApiKey = state.provider !== 'ollama' && (!currentAuthOption || !currentAuthOption.isSubscription || currentAuthOption.isToken)
   const isSubscription = currentAuthOption?.isSubscription
@@ -192,6 +224,9 @@ export default function ModelAuthPage() {
 
   const handleProviderChange = (providerId) => {
     dispatch({ type: 'SET_PROVIDER', payload: providerId })
+    const providerInfo = providerList.find(p => p.id === providerId)
+    dispatch({ type: 'SET_AUTH_CHOICE', payload: providerInfo?.authChoice || '' })
+    dispatch({ type: 'UNSKIP_FIELD', payload: 'apiKey' })
     setSearchQuery('')
     setFilterFree(false)
     // Auto-select first authed model for convenience
@@ -221,9 +256,22 @@ export default function ModelAuthPage() {
       <div className="form-section">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
           <h3 className="form-section-title" style={{ marginBottom: 0 }}>🏢 Provider</h3>
-          <button className="btn btn-ghost btn-sm" onClick={() => fetchAllModels(true)} disabled={loading}>
-            {loading ? <span className="animate-pulse">🔄</span> : '🔄'} Refresh
-          </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {providerDocsUrl && (
+              <a
+                href={providerDocsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-ghost btn-sm"
+                style={{ textDecoration: 'none' }}
+              >
+                📘 Docs
+              </a>
+            )}
+            <button className="btn btn-ghost btn-sm" onClick={() => fetchAllModels(true)} disabled={loading}>
+              {loading ? <span className="animate-pulse">🔄</span> : '🔄'} Refresh
+            </button>
+          </div>
         </div>
         <div className="card-grid card-grid-3">
           {loading && dynamicProviders.length === 0 ? (
@@ -506,6 +554,11 @@ export default function ModelAuthPage() {
                   Open Console ↗
                 </a>
               )}
+              {providerDocsUrl && (
+                <a href={providerDocsUrl} target="_blank" rel="noopener noreferrer" className="waiting-link">
+                  Open Provider Docs ↗
+                </a>
+              )}
               <div style={{ width: '100%', maxWidth: '400px', marginTop: 'var(--space-md)' }}>
                 <input
                   className="field-input mono"
@@ -539,6 +592,11 @@ export default function ModelAuthPage() {
               {currentProviderInfo?.consoleUrl && (
                 <a href={currentProviderInfo.consoleUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px' }}>
                   Get credentials ↗
+                </a>
+              )}
+              {providerDocsUrl && (
+                <a href={providerDocsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', marginLeft: '10px' }}>
+                  Provider docs ↗
                 </a>
               )}
             </div>

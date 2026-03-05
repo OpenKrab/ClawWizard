@@ -34,6 +34,24 @@ export default function PreviewDeployPage() {
   const currentProvider = MODEL_PROVIDERS.find(p => p.id === state.provider)
   const enabledChannels = MESSAGING_CHANNELS.filter(c => state.config.channels[c.id]?.enabled)
 
+  const getChannelManualCommand = (channelId, fallbackCommand) => {
+    if (channelId === 'bluebubbles') {
+      const bluebubbles = state.config.channels.bluebubbles || {}
+      const httpUrl = bluebubbles.httpUrl || 'http://192.168.1.100:1234'
+      const password = bluebubbles.password || 'YOUR_BLUEBUBBLES_PASSWORD'
+      const webhookPath = bluebubbles.webhookPath || '/bluebubbles-webhook'
+      return `openclaw channels add bluebubbles --http-url "${httpUrl}" --password "${password}" --webhook-path "${webhookPath}"\nopenclaw channels login bluebubbles`
+    }
+
+    if (channelId === 'discord') {
+      const discord = state.config.channels.discord || {}
+      const token = discord.token || '$DISCORD_BOT_TOKEN'
+      return `openclaw config set channels.discord.token "\\"${token}\\"" --json\nopenclaw config set channels.discord.enabled true --json\nopenclaw gateway`
+    }
+
+    return fallbackCommand
+  }
+
   useEffect(() => {
     if (logEndRef.current && showLogs) {
       logEndRef.current.scrollIntoView({ behavior: 'smooth' })
@@ -256,7 +274,11 @@ export default function PreviewDeployPage() {
     { title: 'Provider Setup', cmd: currentProvider?.cliSetup || 'openclaw onboard', desc: `Authenticate with ${currentProvider?.name || 'provider'}.` },
     { title: 'Security & Access', cmd: state.config.gateway.tailscale?.mode !== 'off' ? `openclaw configure --tailscale ${state.config.gateway.tailscale.mode}` : 'openclaw gateway status', desc: 'Verify gateway security.' },
   ]
-  enabledChannels.forEach(chan => manualSteps.push({ title: `Pair ${chan.name}`, cmd: chan.cliSetup, desc: `Connect to ${chan.name}.` }))
+  enabledChannels.forEach(chan => manualSteps.push({
+    title: `Pair ${chan.name}`,
+    cmd: getChannelManualCommand(chan.id, chan.cliSetup),
+    desc: `Connect to ${chan.name}.`
+  }))
   manualSteps.push({ title: 'Health Check', cmd: 'openclaw doctor', desc: 'Verify everything works.' })
 
   // ──────── Status Dashboard (shown after deploy) ────────

@@ -2,6 +2,17 @@ import { useState, useEffect } from 'react'
 import { useWizard } from '../context/WizardContext'
 import { useTranslation } from '../i18n'
 
+const PLATFORM_DOCS = [
+  { id: 'macos', name: 'macOS App', icon: '🍎', url: 'https://docs.openclaw.ai/platforms/macos' },
+  { id: 'linux', name: 'Linux App', icon: '🐧', url: 'https://docs.openclaw.ai/platforms/linux' },
+  { id: 'windows', name: 'Windows (WSL2)', icon: '🪟', url: 'https://docs.openclaw.ai/platforms/windows' },
+  { id: 'android', name: 'Android App', icon: '🤖', url: 'https://docs.openclaw.ai/platforms/android' },
+  { id: 'ios', name: 'iOS App', icon: '📱', url: 'https://docs.openclaw.ai/platforms/ios' },
+  { id: 'digitalocean', name: 'DigitalOcean', icon: '🌊', url: 'https://docs.openclaw.ai/platforms/digitalocean' },
+  { id: 'oracle', name: 'Oracle Cloud', icon: '☁️', url: 'https://docs.openclaw.ai/platforms/oracle' },
+  { id: 'raspberry-pi', name: 'Raspberry Pi', icon: '🥧', url: 'https://docs.openclaw.ai/platforms/raspberry-pi' },
+]
+
 export default function SetupPage() {
   const { nextStep } = useWizard()
   const { t } = useTranslation()
@@ -142,9 +153,9 @@ export default function SetupPage() {
               </code>
             </div>
             <div className="glass-card" style={{ padding: 'var(--space-md)' }}>
-              <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>🪟 Windows (PowerShell)</h4>
+              <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>🪟 Windows (WSL2 bootstrap)</h4>
               <code style={{ display: 'block', fontSize: '11px', background: 'var(--bg-primary)', padding: '10px', borderRadius: '4px', color: 'var(--text-accent)' }}>
-                iwr -useb https://openclaw.ai/install.ps1 | iex
+                wsl --install -d Ubuntu
               </code>
             </div>
           </div>
@@ -154,6 +165,44 @@ export default function SetupPage() {
               npm install -g openclaw@latest
             </code>
           </div>
+
+          <div style={{ marginTop: 'var(--space-xl)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Platforms Overview</h4>
+              <a
+                href="https://docs.openclaw.ai/platforms/index"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="waiting-link"
+                style={{ margin: 0 }}
+              >
+                Open Full Platforms Docs ↗
+              </a>
+            </div>
+            <div className="card-grid card-grid-3">
+              {PLATFORM_DOCS.map((platform) => (
+                <a
+                  key={platform.id}
+                  href={platform.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glass-card clickable"
+                  style={{
+                    padding: 'var(--space-md)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                  }}
+                >
+                  <span style={{ fontSize: '20px' }}>{platform.icon}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600 }}>{platform.name}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
         </div>
       )}
 
