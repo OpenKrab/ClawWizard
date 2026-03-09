@@ -598,6 +598,21 @@ export default function ModelAuthPage() {
           Enter a model id first. For providers with supported browser login, you can switch to OAuth below.
         </p>
 
+        {currentProviderInfo?.modelsUrl && (
+          <p className="field-hint" style={{ marginTop: '8px' }}>
+            📋 Official model list for{' '}
+            <strong>{currentProviderInfo.name || state.provider}</strong>:{' '}
+            <a
+              href={currentProviderInfo.modelsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'var(--text-accent)', textDecoration: 'underline' }}
+            >
+              {currentProviderInfo.modelsUrl}
+            </a>
+          </p>
+        )}
+
         {suggestedModels.length > 0 && (
           <div style={{ marginTop: 'var(--space-md)' }}>
             <p className="field-hint" style={{ marginBottom: '8px' }}>
