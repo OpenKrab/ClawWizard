@@ -8,16 +8,17 @@ Write-Host "  ClawWizard Installation"
 Write-Host "=================================="
 Write-Host ""
 
-# Check if already in ClawWizard directory
+# Clone or enter ClawWizard directory
+$ClawDir = Join-Path $PWD "ClawWizard"
 if (-not (Test-Path ".\.git")) {
-    Write-Host "Cloning ClawWizard repository..."
-    try {
-        git clone https://github.com/OpenKrab/ClawWizard.git ClawWizard-temp
-        Move-Item -Path "ClawWizard-temp\*" -Destination . -Force
-        Remove-Item -Path "ClawWizard-temp" -Force
+    if (Test-Path $ClawDir) {
+        Write-Host "Entering existing ClawWizard directory..."
+        Set-Location $ClawDir
+    } else {
+        Write-Host "Cloning ClawWizard repository..."
+        git clone https://github.com/OpenKrab/ClawWizard.git ClawWizard
+        Set-Location $ClawDir
         Write-Host "✅ Repository cloned successfully!"
-    } catch {
-        Write-Host "ℹ️  Already in a git repository or directory is not empty"
     }
     Write-Host ""
 }
