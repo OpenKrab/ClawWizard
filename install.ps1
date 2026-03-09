@@ -1,196 +1,135 @@
-# ClawWizard Installation Script for Windows
-# PowerShell script to set up ClawWizard development environment
+﻿# ClawWizard Installation Script for Windows PowerShell
 
 $ErrorActionPreference = "Continue"
 
+# Force UTF-8 output
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+Write-Host ""
 Write-Host "=================================="
-Write-Host "  ClawWizard Installation"
+Write-Host "   ClawWizard Installation"
 Write-Host "=================================="
 Write-Host ""
 
 # Clone or enter ClawWizard directory
-$ClawDir = Join-Path $PWD "ClawWizard"
-if (-not (Test-Path ".\.git")) {
-    if (Test-Path $ClawDir) {
-        Write-Host "Entering existing ClawWizard directory..."
-        Set-Location $ClawDir
-    } else {
-        Write-Host "Cloning ClawWizard repository..."
-        git clone https://github.com/OpenKrab/ClawWizard.git ClawWizard
-        Set-Location $ClawDir
-        Write-Host "✅ Repository cloned successfully!"
-    }
+$StartDir = $PWD.Path
+$ClawDir  = Join-Path $StartDir "ClawWizard"
+
+if (Test-Path (Join-Path $StartDir "package.json")) {
+    Write-Host "[OK] Already inside ClawWizard directory."
     Write-Host ""
-}
-
-# Check if Node.js is installed
-Write-Host "Checking Node.js installation..."
-$NodePath = (Get-Command node -ErrorAction SilentlyContinue)
-if (-not $NodePath) {
-    Write-Host "❌ Node.js is not installed."
-    Write-Host ""
-    
-    $response = Read-Host "Do you want to install Node.js automatically? (y/n)"
-    if ($response -eq 'y' -or $response -eq 'Y') {
-        Write-Host "Installing Node.js via Chocolatey..."
-        
-        # Check if Chocolatey is installed
-        $ChocoPath = (Get-Command choco -ErrorAction SilentlyContinue)
-        if (-not $ChocoPath) {
-            Write-Host "⚠️  Chocolatey not found. Installing Chocolatey first..."
-            try {
-                Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-                iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-            } catch {
-                Write-Host "❌ Could not install Chocolatey. Please install Node.js manually from https://nodejs.org/"
-                exit 1
-            }
-        }
-        
-        try {
-            Write-Host "Installing Node.js..."
-            choco install nodejs -y
-            Write-Host "✅ Node.js installed successfully!"
-            
-            # Refresh PATH
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-        } catch {
-            Write-Host "⚠️  Choco install had issues. Please install Node.js manually from https://nodejs.org/"
-        }
-    } else {
-        Write-Host "Please install Node.js from https://nodejs.org/"
-        exit 1
-    }
-}
-
-$NodeVersion = node -v
-Write-Host "✅ Node.js found: $NodeVersion"
-Write-Host ""
-
-# Check if npm is installed
-Write-Host "Checking npm installation..."
-$NpmPath = (Get-Command npm -ErrorAction SilentlyContinue)
-if (-not $NpmPath) {
-    Write-Host "❌ npm is not installed."
-    Write-Host "Please install npm from https://nodejs.org/"
-    exit 1
-}
-
-try {
-    $NpmVersion = npm -v
-    Write-Host "✅ npm found: $NpmVersion"
-} catch {
-    Write-Host "⚠️  Could not verify npm version, continuing anyway..."
-}
-Write-Host ""
-
-# Diagnose and fix PATH for global npm packages
-Write-Host "=================================="
-Write-Host "  Checking npm PATH Configuration"
-Write-Host "=================================="
-Write-Host ""
-
-try {
-    $NpmGlobalPath = npm prefix -g
-    Write-Host "Diagnosing npm global prefix..."
-    Write-Host "  npm prefix -g: $NpmGlobalPath"
-    Write-Host ""
-    
-    # Check if npm global path is in PATH
-    $PathArray = $env:Path -split ";"
-    $NpmInPath = $PathArray -contains $NpmGlobalPath
-    
-    if ($NpmInPath) {
-        Write-Host "✅ npm global bin is in your PATH"
-    } else {
-        Write-Host "⚠️  npm global bin is NOT in your PATH"
-        Write-Host ""
-        
-        $response = Read-Host "Do you want to fix this? (y/n)"
-        if ($response -eq 'y' -or $response -eq 'Y') {
-            Write-Host "Adding npm global path to system PATH..."
-            
-            $CurrentUserPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
-            $NewPath = "$NpmGlobalPath;$CurrentUserPath"
-            [System.Environment]::SetEnvironmentVariable("Path", $NewPath, "User")
-            
-            # Update session PATH
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-            
-            Write-Host "✅ Updated system PATH"
-            Write-Host "Please restart your terminal to apply changes."
-        }
-    }
-} catch {
-    Write-Host "⚠️  Could not diagnose npm PATH, continuing anyway..."
-}
-Write-Host ""
-
-# Install dependencies
-Write-Host "Installing dependencies..."
-try {
-    npm install
-    Write-Host "✅ Dependencies installed successfully!"
-} catch {
-    Write-Host "⚠️  npm install encountered an issue, continuing..."
-}
-Write-Host ""
-
-# Build the project
-Write-Host "Building ClawWizard..."
-try {
-    npm run build
-    Write-Host "✅ Build completed successfully!"
-} catch {
-    Write-Host "⚠️  Build encountered an issue, continuing..."
-}
-Write-Host ""
-
-# Install OpenClaw
-Write-Host "=================================="
-Write-Host "  Installing OpenClaw Engine"
-Write-Host "=================================="
-Write-Host ""
-
-$response = Read-Host "Do you want to install OpenClaw Gateway? (y/n)"
-if ($response -eq 'y' -or $response -eq 'Y') {
-    Write-Host "Installing OpenClaw..."
-    try {
-        & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1)))
-        Write-Host "✅ OpenClaw installed successfully!"
-    } catch {
-        Write-Host "⚠️  OpenClaw installation encountered an issue"
-        Write-Host "To install manually, run: & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1)))"
-    }
+} elseif (Test-Path $ClawDir) {
+    Write-Host "[->] Entering existing ClawWizard directory..."
+    Set-Location $ClawDir
+    Write-Host "[OK] Entered: $ClawDir"
     Write-Host ""
 } else {
-    Write-Host "Skipping OpenClaw installation."
-    Write-Host "To install later, run: & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1)))"
+    Write-Host "[->] Cloning ClawWizard repository..."
+    git clone https://github.com/OpenKrab/ClawWizard.git ClawWizard
+    if ($LASTEXITCODE -eq 0) {
+        Set-Location $ClawDir
+        Write-Host "[OK] Repository cloned: $ClawDir"
+    } else {
+        Write-Host "[ERR] Clone failed."
+        exit 1
+    }
     Write-Host ""
 }
 
+Write-Host "Working directory: $($PWD.Path)"
+Write-Host ""
+
+# Node.js
+Write-Host "Checking Node.js..."
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    Write-Host "[ERR] Node.js not found."
+    $r = Read-Host "Install via Chocolatey? (y/n)"
+    if ($r -in 'y','Y') {
+        if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+            Write-Host "[->] Installing Chocolatey..."
+            Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+            [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072
+            iex ((New-Object Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+        }
+        choco install nodejs -y
+        $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
+        Write-Host "[OK] Node.js installed."
+    } else {
+        Write-Host "Please install from https://nodejs.org/ then rerun."
+        exit 1
+    }
+} else {
+    Write-Host "[OK] Node.js $(node -v)"
+}
+
+# npm
+if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    Write-Host "[ERR] npm not found. Reinstall Node.js from https://nodejs.org/"
+    exit 1
+}
+Write-Host "[OK] npm $(npm -v)"
+Write-Host ""
+
+# PATH check
+Write-Host "Checking npm global PATH..."
+$NpmGlobal = (npm prefix -g).Trim()
+if (($env:Path -split ";") -contains $NpmGlobal) {
+    Write-Host "[OK] PATH includes $NpmGlobal"
+} else {
+    Write-Host "[WARN] $NpmGlobal not in PATH"
+    $r = Read-Host "Fix automatically? (y/n)"
+    if ($r -in 'y','Y') {
+        $UserPath = [Environment]::GetEnvironmentVariable("Path","User")
+        [Environment]::SetEnvironmentVariable("Path","$NpmGlobal;$UserPath","User")
+        $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
+        Write-Host "[OK] PATH updated — restart terminal to take effect."
+    }
+}
+Write-Host ""
+
+# Install deps
+Write-Host "Installing dependencies..."
+npm install --no-fund --no-audit
+if ($LASTEXITCODE -eq 0) { Write-Host "[OK] Done." } else { Write-Host "[WARN] Exit $LASTEXITCODE — continuing." }
+Write-Host ""
+
+# Build
+Write-Host "Building ClawWizard..."
+npm run build
+if ($LASTEXITCODE -eq 0) { Write-Host "[OK] Build complete." } else { Write-Host "[WARN] Build had issues — you can still run 'npm run dev'." }
+Write-Host ""
+
+# OpenClaw
 Write-Host "=================================="
-Write-Host "  Installation Completed! ✨"
+Write-Host "   OpenClaw Gateway (optional)"
 Write-Host "=================================="
 Write-Host ""
-Write-Host "Available commands:"
-Write-Host "  npm run dev          - Start development server"
-Write-Host "  npm run build        - Build for production"
-Write-Host "  npm run preview      - Preview production build"
+$r = Read-Host "Install OpenClaw Gateway? (y/n)"
+if ($r -in 'y','Y') {
+    & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1)))
+    Write-Host "[OK] OpenClaw installed."
+} else {
+    Write-Host "[SKIP] Run later: & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1)))"
+}
+Write-Host ""
+
+# Done
+Write-Host "=================================="
+Write-Host "   Installation Complete!"
+Write-Host "=================================="
+Write-Host ""
+Write-Host "Commands:"
+Write-Host "  npm run dev           - Start dev server (http://localhost:5173)"
+Write-Host "  npm run build         - Build for production"
+Write-Host "  npm run preview       - Preview production build"
 Write-Host "  npm run models:export - Export models"
 Write-Host ""
 
-# Ask user if they want to start dev server
-$response = Read-Host "Do you want to start development server now? (y/n)"
-if ($response -eq 'y' -or $response -eq 'Y') {
-    Write-Host "Starting development server..."
-    try {
-        npm run dev
-    } catch {
-        Write-Host "❌ Failed to start dev server"
-        Write-Host "Please run: npm run dev"
-    }
+$r = Read-Host "Start dev server now? (y/n)"
+if ($r -in 'y','Y') {
+    Write-Host ""
+    Write-Host "Starting... (Ctrl+C to stop)"
+    npm run dev
 } else {
-    Write-Host "To start development later, run: npm run dev"
+    Write-Host "Run 'npm run dev' when ready."
 }
