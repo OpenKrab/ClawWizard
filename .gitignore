@@ -32,3 +32,4 @@ dist-ssr
 
 # Vite
 .vite
+public/models-export.local.json

@@ -311,7 +311,7 @@ export const MODEL_PROVIDERS = [
       "anthropic/claude-3-5-sonnet",
       "anthropic/claude-3-5-haiku",
     ],
-    consoleUrl: "https://docs.openclaw.ai/providers/anthropic",
+    consoleUrl: "https://docs.openclaw.ai/providers/claude-max-api-proxy",
     keyPattern: null,
     envKey: null,
     authChoice: "token",
