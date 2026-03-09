@@ -287,7 +287,50 @@ If you prefer to run ClawWizard in a container:
 
 ---
 
-## 📸 Screenshots
+## � Troubleshooting
+
+### Command `openclaw` not found?
+
+If you get "command not found: openclaw" after setting up, your PATH isn't configured correctly.
+
+**Quick Diagnosis:**
+```bash
+node -v        # Check Node.js
+npm -v         # Check npm
+npm prefix -g  # Show global npm path
+echo "$PATH"   # Show current PATH
+```
+
+**Fix for macOS/Linux:**
+
+1. Check if npm global bin is in your PATH:
+   ```bash
+   echo "$(npm prefix -g)/bin"
+   ```
+
+2. Add to your shell startup file (`~/.zshrc`, `~/.bashrc`, or `~/.bash_profile`):
+   ```bash
+   export PATH="$(npm prefix -g)/bin:$PATH"
+   ```
+
+3. Apply changes:
+   ```bash
+   source ~/.zshrc    # or ~/.bashrc
+   ```
+
+4. Verify:
+   ```bash
+   openclaw --version
+   ```
+
+**The install script handles this automatically!** Just run:
+```bash
+curl -fsSL https://raw.githubusercontent.com/OpenKrab/ClawWizard/main/install.sh | bash
+```
+
+---
+
+## �📸 Screenshots
 
 <p align="center">
   <img src="assets/step1_welcome.png" width="400" alt="Step 1: Welcome">

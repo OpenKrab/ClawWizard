@@ -22,8 +22,39 @@ fi
 echo "Checking Node.js installation..."
 if ! command -v node &> /dev/null; then
     echo "❌ Node.js is not installed."
-    echo "Please install Node.js 16+ from https://nodejs.org/"
-    exit 1
+    read -p "Do you want to install Node.js automatically? (y/n) " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installing Node.js..."
+        # Detect OS and install Node.js accordingly
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            if command -v brew &> /dev/null; then
+                brew install node
+            else
+                echo "❌ Homebrew not found. Please install Node.js from https://nodejs.org/"
+                exit 1
+            fi
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux
+            if command -v apt-get &> /dev/null; then
+                sudo apt-get update
+                sudo apt-get install -y nodejs npm
+            elif command -v yum &> /dev/null; then
+                sudo yum install -y nodejs
+            else
+                echo "❌ Unsupported package manager. Please install Node.js from https://nodejs.org/"
+                exit 1
+            fi
+        else
+            echo "❌ Unsupported OS. Please install Node.js from https://nodejs.org/"
+            exit 1
+        fi
+        echo "✅ Node.js installed successfully!"
+    else
+        echo "Please install Node.js 16+ from https://nodejs.org/"
+        exit 1
+    fi
 fi
 
 NODE_VERSION=$(node -v)
@@ -42,6 +73,49 @@ NPM_VERSION=$(npm -v)
 echo "✅ npm found: $NPM_VERSION"
 echo ""
 
+# Diagnose and fix PATH for global npm packages
+echo "╔══════════════════════════════════════╗"
+echo "║     Checking npm PATH Configuration  ║"
+echo "╚══════════════════════════════════════╝"
+echo ""
+
+NPM_GLOBAL_PATH=$(npm prefix -g)
+NPM_GLOBAL_BIN="$NPM_GLOBAL_PATH/bin"
+
+echo "Diagnosing npm global prefix..."
+echo "  npm prefix -g: $NPM_GLOBAL_PATH"
+echo "  npm bin -g: $NPM_GLOBAL_BIN"
+echo ""
+
+# Check if npm global bin is in PATH
+if [[ ":$PATH:" == *":$NPM_GLOBAL_BIN:"* ]]; then
+    echo "✅ npm global bin is in your PATH"
+else
+    echo "⚠️  npm global bin is NOT in your PATH"
+    echo ""
+    echo "This means you won't be able to run 'openclaw' command directly."
+    echo ""
+    read -p "Do you want to fix this? (y/n) " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [[ "$SHELL" == *"zsh"* ]]; then
+            SHELL_RC="$HOME/.zshrc"
+        else
+            SHELL_RC="$HOME/.bashrc"
+        fi
+        
+        echo "Adding npm global bin to $SHELL_RC..."
+        echo "" >> "$SHELL_RC"
+        echo "# Added by ClawWizard installer" >> "$SHELL_RC"
+        echo "export PATH=\"\$(npm prefix -g)/bin:\$PATH\"" >> "$SHELL_RC"
+        echo "✅ Updated $SHELL_RC"
+        echo ""
+        echo "Please run: source $SHELL_RC"
+        echo "Or open a new terminal to apply changes."
+    fi
+fi
+echo ""
+
 # Install dependencies
 echo "Installing dependencies..."
 npm install
@@ -53,6 +127,24 @@ echo "Building ClawWizard..."
 npm run build
 echo "✅ Build completed successfully!"
 echo ""
+
+# Install OpenClaw
+echo "╔══════════════════════════════════════╗"
+echo "║       Installing OpenClaw Engine    ║"
+echo "╚══════════════════════════════════════╝"
+echo ""
+read -p "Do you want to install OpenClaw Gateway? (y/n) " -n 1 -r
+echo ""
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "Installing OpenClaw..."
+    curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
+    echo "✅ OpenClaw installed successfully!"
+    echo ""
+else
+    echo "Skipping OpenClaw installation."
+    echo "To install later, run: curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard"
+    echo ""
+fi
 
 echo "╔══════════════════════════════════════╗"
 echo "║    Installation Completed! ✨       ║"

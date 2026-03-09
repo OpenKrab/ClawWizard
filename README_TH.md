@@ -278,7 +278,50 @@ flowchart TD
 
 ---
 
-## 📸 ภาพหน้าจอการใช้งาน (Screenshots)
+## � การแก้ไขปัญหา (Troubleshooting)
+
+### คำสั่ง `openclaw` ตอบไม่ได้ / Not found?
+
+หากประเมินว่า "command not found: openclaw" หลังการติดตั้งเสร็จแล้ว แปลว่า PATH ของคุณไม่ได้ตั้งค่าถูกต้อง
+
+**ตรวจสอบอย่างรวดเร็ว:**
+```bash
+node -v              # ตรวจสอบ Node.js
+npm -v               # ตรวจสอบ npm
+npm prefix -g        # ดูที่อยู่ npm global
+echo "$PATH"         # ดู PATH ปัจจุบัน
+```
+
+**วิธีแก้ไข (macOS/Linux):**
+
+1. ตรวจสอบว่า npm global bin อยู่ใน PATH หรือไม่:
+   ```bash
+   echo "$(npm prefix -g)/bin"
+   ```
+
+2. เพิ่มเข้าไปในไฟล์ startup ของ shell (`~/.zshrc`, `~/.bashrc`, หรือ `~/.bash_profile`):
+   ```bash
+   export PATH="$(npm prefix -g)/bin:$PATH"
+   ```
+
+3. บังคับให้ใช้การตั้งค่าใหม่:
+   ```bash
+   source ~/.zshrc    # หรือ ~/.bashrc
+   ```
+
+4. ตรวจสอบอีกครั้ง:
+   ```bash
+   openclaw --version
+   ```
+
+**install script จะทำเรื่องนี้ให้คุณโดยอัตโนมัติ!** เพียงแค่รันคำสั่ง:
+```bash
+curl -fsSL https://raw.githubusercontent.com/OpenKrab/ClawWizard/main/install.sh | bash
+```
+
+---
+
+## �📸 ภาพหน้าจอการใช้งาน (Screenshots)
 
 <p align="center">
   <img src="assets/step1_welcome.png" width="400" alt="Step 1: Welcome">
