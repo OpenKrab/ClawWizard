@@ -64,24 +64,19 @@ Write-Host ""
 if ($NodeVer) {
     Write-Host "[SKIP] Node.js already installed ($NodeVer)"
 } else {
-    Write-Host "[ERR] Node.js not found."
-    $r = Read-Host "Install via Chocolatey? (y/n)"
-    if ($r -in 'y','Y') {
-        if (-not $ChocoVer) {
-            Write-Host "[->] Installing Chocolatey..."
-            Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-            [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072
-            iex ((New-Object Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-        }
-        Write-Host "[->] Installing Node.js..."
-        choco install nodejs -y
+    Write-Host "[->] Node.js not found — installing automatically..."
+    if (-not $ChocoVer) {
+        Write-Host "[->] Installing Chocolatey..."
+        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072
+        iex ((New-Object Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
         $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
-        $NodeVer = node -v
-        Write-Host "[OK] Node.js installed: $NodeVer"
-    } else {
-        Write-Host "Please install from https://nodejs.org/ then rerun."
-        exit 1
     }
+    Write-Host "[->] Installing Node.js..."
+    choco install nodejs -y
+    $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
+    $NodeVer = node -v
+    Write-Host "[OK] Node.js installed: $NodeVer"
 }
 
 # ── npm ───────────────────────────────────────────────────────────────────────
@@ -99,14 +94,11 @@ $NpmGlobal = (npm prefix -g).Trim()
 if (($env:Path -split ";") -contains $NpmGlobal) {
     Write-Host "[OK] PATH includes $NpmGlobal"
 } else {
-    Write-Host "[WARN] $NpmGlobal not in PATH"
-    $r = Read-Host "Fix automatically? (y/n)"
-    if ($r -in 'y','Y') {
-        $UserPath = [Environment]::GetEnvironmentVariable("Path","User")
-        [Environment]::SetEnvironmentVariable("Path","$NpmGlobal;$UserPath","User")
-        $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
-        Write-Host "[OK] PATH updated - restart terminal to take effect."
-    }
+    Write-Host "[->] $NpmGlobal not in PATH — fixing automatically..."
+    $UserPath = [Environment]::GetEnvironmentVariable("Path","User")
+    [Environment]::SetEnvironmentVariable("Path","$NpmGlobal;$UserPath","User")
+    $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
+    Write-Host "[OK] PATH updated - restart terminal to take effect."
 }
 Write-Host ""
 
@@ -152,14 +144,9 @@ Write-Host ""
 if ($OpenClawVer) {
     Write-Host "[SKIP] OpenClaw already installed ($OpenClawVer)"
 } else {
-    $r = Read-Host "Install OpenClaw Gateway? (y/n)"
-    if ($r -in 'y','Y') {
-        & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1)))
-        Write-Host "[OK] OpenClaw installed."
-    } else {
-        Write-Host "[SKIP] To install later:"
-        Write-Host "  & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1)))"
-    }
+    Write-Host "[->] OpenClaw not found — installing automatically..."
+    & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1)))
+    Write-Host "[OK] OpenClaw installed."
 }
 Write-Host ""
 

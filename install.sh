@@ -33,40 +33,32 @@ fi
 # Check if Node.js is installed
 echo "Checking Node.js installation..."
 if ! command -v node &> /dev/null; then
-    echo "❌ Node.js is not installed."
-    read -p "Do you want to install Node.js automatically? (y/n) " -n 1 -r
-    echo ""
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing Node.js..."
-        # Detect OS and install Node.js accordingly
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            # macOS
-            if command -v brew &> /dev/null; then
-                brew install node
-            else
-                echo "❌ Homebrew not found. Please install Node.js from https://nodejs.org/"
-                exit 1
-            fi
-        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            # Linux
-            if command -v apt-get &> /dev/null; then
-                sudo apt-get update
-                sudo apt-get install -y nodejs npm
-            elif command -v yum &> /dev/null; then
-                sudo yum install -y nodejs
-            else
-                echo "❌ Unsupported package manager. Please install Node.js from https://nodejs.org/"
-                exit 1
-            fi
+    echo "[->] Node.js not found — installing automatically..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        if command -v brew &> /dev/null; then
+            brew install node
         else
-            echo "❌ Unsupported OS. Please install Node.js from https://nodejs.org/"
+            echo "[->] Homebrew not found — installing Homebrew first..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            brew install node
+        fi
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        if command -v apt-get &> /dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y nodejs npm
+        elif command -v yum &> /dev/null; then
+            sudo yum install -y nodejs
+        elif command -v dnf &> /dev/null; then
+            sudo dnf install -y nodejs
+        else
+            echo "❌ Unsupported package manager. Install Node.js from https://nodejs.org/"
             exit 1
         fi
-        echo "✅ Node.js installed successfully!"
     else
-        echo "Please install Node.js 16+ from https://nodejs.org/"
+        echo "❌ Unsupported OS. Install Node.js from https://nodejs.org/"
         exit 1
     fi
+    echo "✅ Node.js installed successfully!"
 fi
 
 NODE_VERSION=$(node -v)
@@ -103,28 +95,17 @@ echo ""
 if [[ ":$PATH:" == *":$NPM_GLOBAL_BIN:"* ]]; then
     echo "✅ npm global bin is in your PATH"
 else
-    echo "⚠️  npm global bin is NOT in your PATH"
-    echo ""
-    echo "This means you won't be able to run 'openclaw' command directly."
-    echo ""
-    read -p "Do you want to fix this? (y/n) " -n 1 -r
-    echo ""
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        if [[ "$SHELL" == *"zsh"* ]]; then
-            SHELL_RC="$HOME/.zshrc"
-        else
-            SHELL_RC="$HOME/.bashrc"
-        fi
-        
-        echo "Adding npm global bin to $SHELL_RC..."
-        echo "" >> "$SHELL_RC"
-        echo "# Added by ClawWizard installer" >> "$SHELL_RC"
-        echo "export PATH=\"\$(npm prefix -g)/bin:\$PATH\"" >> "$SHELL_RC"
-        echo "✅ Updated $SHELL_RC"
-        echo ""
-        echo "Please run: source $SHELL_RC"
-        echo "Or open a new terminal to apply changes."
+    echo "[->] npm global bin not in PATH — fixing automatically..."
+    if [[ "$SHELL" == *"zsh"* ]]; then
+        SHELL_RC="$HOME/.zshrc"
+    else
+        SHELL_RC="$HOME/.bashrc"
     fi
+    echo "" >> "$SHELL_RC"
+    echo "# Added by ClawWizard installer" >> "$SHELL_RC"
+    echo "export PATH=\"\$(npm prefix -g)/bin:\$PATH\"" >> "$SHELL_RC"
+    export PATH="$NPM_GLOBAL_BIN:$PATH"
+    echo "✅ Updated $SHELL_RC (effective immediately in this session)"
 fi
 echo ""
 
@@ -159,18 +140,9 @@ if command -v openclaw &> /dev/null; then
     OC_VER=$(openclaw --version 2>/dev/null || echo "")
     echo "✅ OpenClaw already installed${OC_VER:+ ($OC_VER)} — skipping"
 else
-    read -p "Do you want to install OpenClaw Gateway? (y/n) " -n 1 -r
-    echo ""
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing OpenClaw..."
-        curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
-        echo "✅ OpenClaw installed successfully!"
-        echo ""
-    else
-        echo "Skipping OpenClaw installation."
-        echo "To install later, run: curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard"
-        echo ""
-    fi
+    echo "[->] OpenClaw not found — installing automatically..."
+    curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
+    echo "✅ OpenClaw installed successfully!"
 fi
 
 echo "╔══════════════════════════════════════╗"
