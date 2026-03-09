@@ -10,6 +10,18 @@ echo "║      ClawWizard Installation        ║"
 echo "╚══════════════════════════════════════╝"
 echo ""
 
+# Show installed tool versions
+echo "Checking installed tools..."
+GIT_VER=$(git --version 2>/dev/null || echo "NOT FOUND")
+NODE_VER_CUR=$(node -v 2>/dev/null || echo "NOT FOUND")
+NPM_VER_CUR=$(npm -v 2>/dev/null || echo "NOT FOUND")
+OPENCLAW_VER=$(openclaw --version 2>/dev/null || echo "NOT FOUND")
+echo "  git     : $GIT_VER"
+echo "  node    : $NODE_VER_CUR"
+echo "  npm     : $NPM_VER_CUR"
+echo "  openclaw: $OPENCLAW_VER"
+echo ""
+
 # Clone the repository if not already present
 if [ ! -d ".git" ]; then
     echo "Cloning ClawWizard repository..."
@@ -117,15 +129,25 @@ fi
 echo ""
 
 # Install dependencies
-echo "Installing dependencies..."
-npm install
-echo "✅ Dependencies installed successfully!"
+if [ -d "node_modules" ]; then
+    echo "✅ node_modules already exists — skipping npm install"
+    echo "   (run 'npm install' manually to update dependencies)"
+else
+    echo "Installing dependencies..."
+    npm install
+    echo "✅ Dependencies installed successfully!"
+fi
 echo ""
 
 # Build the project
-echo "Building ClawWizard..."
-npm run build
-echo "✅ Build completed successfully!"
+if [ -d "dist" ]; then
+    echo "✅ dist/ already exists — skipping build"
+    echo "   (run 'npm run build' manually to rebuild)"
+else
+    echo "Building ClawWizard..."
+    npm run build
+    echo "✅ Build completed successfully!"
+fi
 echo ""
 
 # Install OpenClaw
@@ -133,17 +155,22 @@ echo "╔═══════════════════════�
 echo "║       Installing OpenClaw Engine    ║"
 echo "╚══════════════════════════════════════╝"
 echo ""
-read -p "Do you want to install OpenClaw Gateway? (y/n) " -n 1 -r
-echo ""
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "Installing OpenClaw..."
-    curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
-    echo "✅ OpenClaw installed successfully!"
-    echo ""
+if command -v openclaw &> /dev/null; then
+    OC_VER=$(openclaw --version 2>/dev/null || echo "")
+    echo "✅ OpenClaw already installed${OC_VER:+ ($OC_VER)} — skipping"
 else
-    echo "Skipping OpenClaw installation."
-    echo "To install later, run: curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard"
+    read -p "Do you want to install OpenClaw Gateway? (y/n) " -n 1 -r
     echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installing OpenClaw..."
+        curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
+        echo "✅ OpenClaw installed successfully!"
+        echo ""
+    else
+        echo "Skipping OpenClaw installation."
+        echo "To install later, run: curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard"
+        echo ""
+    fi
 fi
 
 echo "╔══════════════════════════════════════╗"
@@ -151,25 +178,9 @@ echo "║    Installation Completed! ✨       ║"
 echo "╚══════════════════════════════════════╝"
 echo ""
 echo "Available commands:"
-echo "  npm run dev          - Start development server"
-echo "  npm run build        - Build for production"
-echo "  npm run preview      - Preview production build"
-echo "  npm run models:export - Export models"
-echo ""
-
-# Ask user if they want to start dev server
-read -p "Do you want to start development server now? (y/n) " -n 1 -r
-echo ""
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "Starting development server..."
-    npm run dev
-else
-    echo "To start development later, run: npm run dev"
-fi
-echo "Available commands:"
-echo "  npm run dev          - Start development server"
-echo "  npm run build        - Build for production"
-echo "  npm run preview      - Preview production build"
+echo "  npm run dev           - Start development server"
+echo "  npm run build         - Build for production"
+echo "  npm run preview       - Preview production build"
 echo "  npm run models:export - Export models"
 echo ""
 
