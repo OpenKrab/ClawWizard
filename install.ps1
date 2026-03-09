@@ -1,9 +1,6 @@
-﻿# ClawWizard Installation Script for Windows PowerShell
+# ClawWizard Installation Script for Windows PowerShell
 
 $ErrorActionPreference = "Continue"
-
-# Force UTF-8 output
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 Write-Host ""
 Write-Host "=================================="
@@ -15,7 +12,7 @@ Write-Host ""
 $StartDir = $PWD.Path
 $ClawDir  = Join-Path $StartDir "ClawWizard"
 
-if (Test-Path (Join-Path $StartDir "package.json")) {
+if (Test-Path (Join-Path $PWD.Path "package.json")) {
     Write-Host "[OK] Already inside ClawWizard directory."
     Write-Host ""
 } elseif (Test-Path $ClawDir) {
@@ -28,7 +25,7 @@ if (Test-Path (Join-Path $StartDir "package.json")) {
     git clone https://github.com/OpenKrab/ClawWizard.git ClawWizard
     if ($LASTEXITCODE -eq 0) {
         Set-Location $ClawDir
-        Write-Host "[OK] Repository cloned: $ClawDir"
+        Write-Host "[OK] Cloned to: $ClawDir"
     } else {
         Write-Host "[ERR] Clone failed."
         exit 1
@@ -82,21 +79,30 @@ if (($env:Path -split ";") -contains $NpmGlobal) {
         $UserPath = [Environment]::GetEnvironmentVariable("Path","User")
         [Environment]::SetEnvironmentVariable("Path","$NpmGlobal;$UserPath","User")
         $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
-        Write-Host "[OK] PATH updated — restart terminal to take effect."
+        Write-Host "[OK] PATH updated - restart terminal to take effect."
     }
 }
 Write-Host ""
 
 # Install deps
 Write-Host "Installing dependencies..."
-npm install --no-fund --no-audit
-if ($LASTEXITCODE -eq 0) { Write-Host "[OK] Done." } else { Write-Host "[WARN] Exit $LASTEXITCODE — continuing." }
+$env:npm_config_progress = "false"
+npm install --no-fund --no-audit --loglevel=error
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "[OK] Dependencies installed."
+} else {
+    Write-Host "[WARN] npm install exit $LASTEXITCODE"
+}
 Write-Host ""
 
 # Build
 Write-Host "Building ClawWizard..."
-npm run build
-if ($LASTEXITCODE -eq 0) { Write-Host "[OK] Build complete." } else { Write-Host "[WARN] Build had issues — you can still run 'npm run dev'." }
+npm run build --if-present
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "[OK] Build complete."
+} else {
+    Write-Host "[WARN] Build had issues - you can still run 'npm run dev'."
+}
 Write-Host ""
 
 # OpenClaw
@@ -109,7 +115,8 @@ if ($r -in 'y','Y') {
     & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1)))
     Write-Host "[OK] OpenClaw installed."
 } else {
-    Write-Host "[SKIP] Run later: & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1)))"
+    Write-Host "[SKIP] To install later:"
+    Write-Host "  & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1)))"
 }
 Write-Host ""
 
