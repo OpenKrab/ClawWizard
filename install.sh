@@ -74,3 +74,19 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 else
     echo "To start development later, run: npm run dev"
 fi
+echo "Available commands:"
+echo "  npm run dev          - Start development server"
+echo "  npm run build        - Build for production"
+echo "  npm run preview      - Preview production build"
+echo "  npm run models:export - Export models"
+echo ""
+
+# Ask user if they want to start dev server
+read -p "Do you want to start development server now? (y/n) " -n 1 -r
+echo ""
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "Starting development server..."
+    npm run dev
+else
+    echo "To start development later, run: npm run dev"
+fi

@@ -29,6 +29,16 @@
 ## � Installation & Setup
 
 ### Quick Start
+#### One-liner Installation ⚡
+```bash
+# For Linux, macOS, and WSL
+curl -fsSL https://raw.githubusercontent.com/OpenKrab/ClawWizard/main/install.sh | bash
+```
+
+```powershell
+# For Windows (PowerShell)
+iwr -useb https://raw.githubusercontent.com/OpenKrab/ClawWizard/main/install.sh | iex
+```
 
 #### Using the install script (Linux/macOS/WSL)
 ```bash
