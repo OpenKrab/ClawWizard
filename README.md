@@ -24,7 +24,64 @@
 
 ---
 
-## 🗺️ Wizard Flow
+## � Installation & Setup
+
+### Quick Start
+
+#### Using the install script (Linux/macOS/WSL)
+```bash
+# Clone the repository
+git clone https://github.com/OpenKrab/ClawWizard.git
+cd ClawWizard
+
+# Run the install script
+chmod +x install.sh
+./install.sh
+```
+
+#### Manual Installation
+```bash
+# Clone the repository
+git clone https://github.com/OpenKrab/ClawWizard.git
+cd ClawWizard
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+#### Windows (Command Prompt or PowerShell)
+```powershell
+# Clone the repository
+git clone https://github.com/OpenKrab/ClawWizard.git
+cd ClawWizard
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+### Available Commands
+```bash
+npm run dev              # Start development server with hot reload
+npm run build            # Build for production
+npm run preview          # Preview production build
+npm run models:export    # Export models to JSON
+```
+
+### Requirements
+- **Node.js** 16+ ([download](https://nodejs.org/))
+- **npm** 8+ (included with Node.js)
+- **Git** ([download](https://git-scm.com/))
+- **OpenClaw Gateway** running locally or remotely
+
+---
+
+## �🗺️ Wizard Flow
 
 ```mermaid
 flowchart TD
