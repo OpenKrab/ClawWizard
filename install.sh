@@ -110,17 +110,10 @@ fi
 echo ""
 
 # Install dependencies
-if [ -d "node_modules" ]; then
-    echo "✅ node_modules already exists — skipping npm install"
-    echo "   (run 'npm install' manually to update dependencies)"
-else
-    echo "Installing dependencies..."
-    npm install
-    echo "✅ Dependencies installed successfully!"
-fi
+echo "Installing dependencies..."
+npm install
+echo "✅ Dependencies installed successfully!"
 echo ""
-
-# Build the project
 if [ -d "dist" ]; then
     echo "✅ dist/ already exists — skipping build"
     echo "   (run 'npm run build' manually to rebuild)"

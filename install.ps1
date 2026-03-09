@@ -102,19 +102,14 @@ if (($env:Path -split ";") -contains $NpmGlobal) {
 }
 Write-Host ""
 
-# ── node_modules already exists? ─────────────────────────────────────────────
-if (Test-Path "node_modules") {
-    Write-Host "[SKIP] node_modules already exists - skipping npm install"
-    Write-Host "       (run 'npm install' manually to update dependencies)"
+# ── node_modules ─────────────────────────────────────────────────────────────────
+Write-Host "Installing dependencies..."
+$env:npm_config_progress = "false"
+npm install --no-fund --no-audit --loglevel=error
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "[OK] Dependencies installed."
 } else {
-    Write-Host "Installing dependencies..."
-    $env:npm_config_progress = "false"
-    npm install --no-fund --no-audit --loglevel=error
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "[OK] Dependencies installed."
-    } else {
-        Write-Host "[WARN] npm install exit $LASTEXITCODE"
-    }
+    Write-Host "[WARN] npm install exit $LASTEXITCODE"
 }
 Write-Host ""
 
