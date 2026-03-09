@@ -29,14 +29,15 @@
 
 ### เริ่มต้นอย่างรวดเร็ว
 #### ติดตั้งแบบ One-liner ⚡
+
+**สำหรับ Linux, macOS, และ WSL:**
 ```bash
-# สำหรับ Linux, macOS, และ WSL
 curl -fsSL https://raw.githubusercontent.com/OpenKrab/ClawWizard/main/install.sh | bash
 ```
 
+**สำหรับ Windows (PowerShell):**
 ```powershell
-# สำหรับ Windows (PowerShell)
-iwr -useb https://raw.githubusercontent.com/OpenKrab/ClawWizard/main/install.sh | iex
+iwr -useb https://raw.githubusercontent.com/OpenKrab/ClawWizard/main/install.ps1 | iex
 ```
 #### วิธีใช้ install script (Linux/macOS/WSL) - ขอแนะนำ ⭐
 ```bash
