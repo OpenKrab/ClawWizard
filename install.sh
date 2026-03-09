@@ -10,6 +10,14 @@ echo "║      ClawWizard Installation        ║"
 echo "╚══════════════════════════════════════╝"
 echo ""
 
+# Clone the repository if not already present
+if [ ! -d ".git" ]; then
+    echo "Cloning ClawWizard repository..."
+    git clone https://github.com/OpenKrab/ClawWizard.git .
+    echo "✅ Repository cloned successfully!"
+    echo ""
+fi
+
 # Check if Node.js is installed
 echo "Checking Node.js installation..."
 if ! command -v node &> /dev/null; then

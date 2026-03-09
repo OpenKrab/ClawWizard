@@ -1,5 +1,7 @@
 # 🦞 ClawWizard
 
+**[Read in Thai 🇹🇭](README_TH.md)**
+
 **ClawWizard** is a premium, interactive setup wizard for [OpenClaw](https://github.com/openclaw/openclaw), your personal AI assistant. It provides a full-featured GUI for configuring every aspect of the OpenClaw Gateway — from model providers to messaging channels, agent workspace, persona templates, and one-click deployment.
 
 <p align="center">
@@ -34,9 +36,14 @@
 git clone https://github.com/OpenKrab/ClawWizard.git
 cd ClawWizard
 
-# Run the install script
+# Run the install script (auto-clones, installs, and starts dev server)
 chmod +x install.sh
 ./install.sh
+```
+
+Or, if you have the `install.sh` file:
+```bash
+./install.sh  # Auto-clones the repo + installs + starts dev server
 ```
 
 #### Manual Installation

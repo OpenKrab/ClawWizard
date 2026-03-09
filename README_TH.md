@@ -1,5 +1,7 @@
 # 🦞 ClawWizard (ภาษาไทย)
 
+**[Read in English 🇺🇸](README.md)**
+
 **ClawWizard** คือเครื่องมือติดตั้งแบบโต้ตอบ (Interactive Setup Wizard) ระดับพรีเมียมสำหรับ [OpenClaw](https://github.com/openclaw/openclaw) ผู้ช่วย AI ส่วนตัวของคุณ โดยตัวเครื่องมือนี้มาพร้อมกับหน้าจอ GUI ที่สวยงามและใช้งานง่าย เพื่อช่วยในการตั้งค่า OpenClaw Gateway ตั้งแต่การเลือกผู้ให้บริการโมเดล, ช่องทางการสื่อสาร, พื้นที่ทำงานเอเจนต์ (Workspace), เทมเพลตบุคลิก และการกดติดตั้ง (Deploy) เพียงครั้งเดียว
 
 <p align="center">
@@ -23,7 +25,69 @@
 
 ---
 
-## 🗺️ ขั้นตอนการทำงาน (Wizard Flow)
+## � การติดตั้งและตั้งค่า (Installation & Setup)
+
+### เริ่มต้นอย่างรวดเร็ว
+
+#### วิธีใช้ install script (Linux/macOS/WSL) - ขอแนะนำ ⭐
+```bash
+# Clone repository
+git clone https://github.com/OpenKrab/ClawWizard.git
+cd ClawWizard
+
+# รัน script โดยอัตโนมัติจะ clone + ติดตั้ง + เปิด dev server
+chmod +x install.sh
+./install.sh
+```
+
+หรือถ้ามี `install.sh` อยู่แล้ว:
+```bash
+./install.sh  # อัตโนมัติ clone + ติดตั้ง + เปิด dev server
+```
+
+#### การติดตั้งแบบขั้นตอน (Manual)
+```bash
+# Clone repository
+git clone https://github.com/OpenKrab/ClawWizard.git
+cd ClawWizard
+
+# ติดตั้ง dependencies
+npm install
+
+# เปิด development server
+npm run dev
+```
+
+#### Windows (Command Prompt หรือ PowerShell)
+```powershell
+# Clone repository
+git clone https://github.com/OpenKrab/ClawWizard.git
+cd ClawWizard
+
+# ติดตั้ง dependencies
+npm install
+
+# เปิด development server
+npm run dev
+```
+
+### คำสั่งที่ใช้ได้
+```bash
+npm run dev              # เปิด dev server (auto-reload)
+npm run build            # สร้าง production build
+npm run preview          # ดูตัวอย่าง production build
+npm run models:export    # ส่งออกโมเดลเป็น JSON
+```
+
+### สิ่งที่ต้องมี
+- **Node.js** 16+ ([ดาวน์โหลด](https://nodejs.org/))
+- **npm** 8+ (มาพร้อมกับ Node.js)
+- **Git** ([ดาวน์โหลด](https://git-scm.com/))
+- **OpenClaw Gateway** ตั้งค่าไว้บนเครื่องหรือที่อื่น
+
+---
+
+## �🗺️ ขั้นตอนการทำงาน (Wizard Flow)
 
 ```mermaid
 flowchart TD
