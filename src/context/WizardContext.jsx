@@ -39,16 +39,16 @@ const defaultConfig = {
     },
   },
   channels: {
-    whatsapp: { enabled: false, dmPolicy: 'pairing', allowFrom: [] },
-    telegram: { enabled: false, botToken: '', dmPolicy: 'pairing', allowFrom: [] },
-    discord: { enabled: false, token: '', dmPolicy: 'pairing', allowFrom: [] },
-    slack: { enabled: false, botToken: '', appToken: '', dmPolicy: 'pairing', allowFrom: [] },
+    whatsapp: { enabled: false, dmPolicy: 'pairing', allowFrom: [], groupPolicy: 'allowlist', groupAllowFrom: [] },
+    telegram: { enabled: false, botToken: '', dmPolicy: 'pairing', allowFrom: [], groups: { '*': { requireMention: true } } },
+    discord: { enabled: false, token: '', dmPolicy: 'pairing', allowFrom: [], groupPolicy: 'allowlist', guilds: {} },
+    slack: { enabled: false, mode: 'socket', botToken: '', appToken: '', dmPolicy: 'pairing', allowFrom: [] },
     signal: { enabled: false, dmPolicy: 'pairing' },
     imessage: { enabled: false, dmPolicy: 'pairing' },
-    googlechat: { enabled: false, dmPolicy: 'pairing' },
+    googlechat: { enabled: false, dmPolicy: 'pairing', serviceAccountFile: '', webhookAudience: '' },
     mattermost: { enabled: false, baseUrl: '', botToken: '', dmPolicy: 'pairing' },
     msteams: { enabled: false, dmPolicy: 'pairing' },
-    bluebubbles: { enabled: false, httpUrl: '', password: '', webhookPath: '/bluebubbles-webhook', dmPolicy: 'pairing', groupPolicy: 'allowlist' },
+    bluebubbles: { enabled: false, serverUrl: '', password: '', webhookPath: '/bluebubbles-webhook', dmPolicy: 'pairing', groupPolicy: 'allowlist' },
     'nextcloud-talk': { enabled: false, dmPolicy: 'pairing' },
     'synology-chat': { enabled: false, dmPolicy: 'pairing' },
     matrix: { enabled: false, dmPolicy: 'pairing' },
@@ -79,7 +79,20 @@ const defaultConfig = {
   },
   env: {},
   tools: {
+    profile: 'coding',
     deny: [],
+  },
+  skills: {
+    install: {
+      nodeManager: 'npm',
+    },
+  },
+  wizard: {
+    lastRunAt: null,
+    lastRunVersion: null,
+    lastRunCommit: null,
+    lastRunCommand: null,
+    lastRunMode: null,
   },
 }
 
@@ -351,7 +364,7 @@ export function WizardProvider({ children }) {
         google: 'GEMINI_API_KEY',
         'vercel-ai-gateway': 'AI_GATEWAY_API_KEY',
         'cloudflare-ai-gateway': 'CLOUDFLARE_AI_GATEWAY_API_KEY',
-        kilocode: 'KILO_API_KEY',
+        kilocode: 'KILOCODE_API_KEY',
         groq: 'GROQ_API_KEY',
         mistral: 'MISTRAL_API_KEY',
         xai: 'XAI_API_KEY',
@@ -364,6 +377,8 @@ export function WizardProvider({ children }) {
         synthetic: 'SYNTHETIC_API_KEY',
         zai: 'ZAI_API_KEY',
         glm: 'ZHIPU_API_KEY',
+        huggingface: 'HUGGINGFACE_HUB_TOKEN',
+        cerebras: 'CEREBRAS_API_KEY',
         qianfan: 'QIANFAN_ACCESS_KEY',
         deepgram: 'DEEPGRAM_API_KEY',
         xiaomi: 'XIAOMI_API_KEY',
@@ -409,6 +424,15 @@ export function WizardProvider({ children }) {
     // Clean up empty models
     if (cfg.agents?.defaults?.models && Object.keys(cfg.agents.defaults.models).length === 0) {
       delete cfg.agents.defaults.models
+    }
+
+    // Set wizard metadata (OpenClaw wizard compliance)
+    cfg.wizard = {
+      lastRunAt: new Date().toISOString(),
+      lastRunVersion: '1.0.0', // This could be dynamic
+      lastRunCommit: null,
+      lastRunCommand: 'clawwizard',
+      lastRunMode: 'local',
     }
 
     return cfg

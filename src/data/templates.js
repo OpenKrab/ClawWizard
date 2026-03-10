@@ -850,9 +850,9 @@ export const MODEL_PROVIDERS = [
     consoleUrl: "https://huggingface.co/settings/tokens",
     modelsUrl: "https://huggingface.co/models?pipeline_tag=text-generation&sort=trending",
     keyPattern: /^hf_/,
-    envKey: null,
-    authChoice: null,
-    cliSetup: "openclaw configure # choose: Hugging Face",
+    envKey: "HUGGINGFACE_HUB_TOKEN",
+    authChoice: "huggingface-api-key",
+    cliSetup: "openclaw onboard --auth-choice huggingface-api-key",
     configSnippet: {},
   },
   {
@@ -881,18 +881,10 @@ export const MODEL_PROVIDERS = [
     consoleUrl: null,
     modelsUrl: "https://ollama.com/library",
     keyPattern: null,
-    envKey: "OLLAMA_API_KEY",
-    authChoice: "ai-gateway-api-key",
-    authOptions: [
-      {
-        id: "ai-gateway-api-key",
-        name: "API Key",
-        icon: "🔑",
-        description: "Vercel AI Gateway API Key",
-      },
-    ],
-    cliSetup:
-      'ollama pull gpt-oss:20b\nexport OLLAMA_API_KEY="ollama-local"\nopenclaw config set models.providers.ollama.apiKey "ollama-local"',
+    envKey: null,
+    authChoice: "skip",
+    authOptions: [],
+    cliSetup: "openclaw configure # choose: Ollama",
     configSnippet: {
       agents: { defaults: { model: { primary: "ollama/gpt-oss:20b" } } },
     },
@@ -923,8 +915,8 @@ export const MODEL_PROVIDERS = [
     consoleUrl: "https://app.kilo.ai/",
     modelsUrl: "https://app.kilo.ai/models",
     keyPattern: null,
-    envKey: "KILO_API_KEY",
-    authChoice: "apiKey",
+    envKey: "KILOCODE_API_KEY",
+    authChoice: "kilocode-api-key",
     cliSetup: "openclaw onboard # choose: Kilocode",
     configSnippet: {
       agents: {
@@ -995,6 +987,25 @@ export const MODEL_PROVIDERS = [
     authChoice: "qianfan-api-key",
     cliSetup: "openclaw configure # choose: Qianfan",
     configSnippet: {},
+  },
+  {
+    id: "cerebras",
+    name: "Cerebras",
+    icon: "🧠",
+    models: [
+      "cerebras/zai-glm-4.7",
+      "cerebras/zai-glm-4.6",
+    ],
+    consoleUrl: "https://inference-docs.cerebras.ai/",
+    modelsUrl: "https://inference-docs.cerebras.ai/docs/getting-started/models",
+    keyPattern: null,
+    envKey: "CEREBRAS_API_KEY",
+    authChoice: "cerebras-api-key",
+    cliSetup: "openclaw onboard --auth-choice cerebras-api-key",
+    configSnippet: {
+      env: { CEREBRAS_API_KEY: "..." },
+      agents: { defaults: { model: { primary: "cerebras/zai-glm-4.7" } } },
+    },
   },
   {
     id: "deepgram",

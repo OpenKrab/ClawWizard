@@ -91,7 +91,9 @@ const AUTH_KEY_FLAGS = {
   "deepgram-api-key": "--deepgram-api-key",
   "volcengine-api-key": "--volcengine-api-key",
   "byteplus-api-key": "--byteplus-api-key",
+  "cerebras-api-key": "--cerebras-api-key",
   "custom-api-key": "--custom-api-key",
+  "groq-api-key": "--groq-api-key",
 };
 
 // Ensure directories exist
@@ -119,11 +121,13 @@ const AUTH_CHOICE_MAP = {
   qianfan: "qianfan-api-key",
   glm: "zhipu-api-key",
   deepgram: "deepgram-api-key",
+  cerebras: "cerebras-api-key",
+  huggingface: "huggingface-api-key",
   xiaomi: "xiaomi-api-key",
   // Providers that authenticate via .env only (no dedicated CLI flag)
   kilocode: "kilocode-api-key",
   openrouter: "openrouter-api-key",
-  groq: "skip",
+  groq: "groq-api-key",
   deepseek: "deepseek-api-key",
   together: "together-api-key",
   venice: "venice-api-key",
@@ -146,7 +150,7 @@ const ENV_KEY_MAP = {
   moonshot: "MOONSHOT_API_KEY",
   synthetic: "SYNTHETIC_API_KEY",
   mistral: "MISTRAL_API_KEY",
-  kilocode: "KILO_API_KEY",
+  kilocode: "KILOCODE_API_KEY",
   openrouter: "OPENROUTER_API_KEY",
   groq: "GROQ_API_KEY",
   deepseek: "DEEPSEEK_API_KEY",
@@ -156,6 +160,8 @@ const ENV_KEY_MAP = {
   qianfan: "QIANFAN_ACCESS_KEY",
   glm: "ZHIPU_API_KEY",
   deepgram: "DEEPGRAM_API_KEY",
+  cerebras: "CEREBRAS_API_KEY",
+  huggingface: "HUGGINGFACE_HUB_TOKEN",
   xiaomi: "XIAOMI_API_KEY",
 };
 

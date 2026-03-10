@@ -340,6 +340,7 @@ curl -fsSL https://raw.githubusercontent.com/OpenKrab/ClawWizard/main/install.sh
   <img src="assets/step4_gateway.png" width="400" alt="Step 4: Gateway">
   <img src="assets/step5_channels.png" width="400" alt="Step 5: Channels">
   <img src="assets/step6_tools.png" width="400" alt="Step 6: Tools">
+  <img src="assets/step7_complate.png" width="400" alt="Step 7: Complete">
 </p>
 
 ---
